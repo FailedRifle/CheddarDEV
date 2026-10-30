@@ -6,9 +6,11 @@
     "build": "node ../scripts/build-pages.js"
   },
   "dependencies": {
-    "@mercuryworkshop/bare-as-module3": "^2.2.5",
-    "@mercuryworkshop/bare-mux": "2.1.7",
-    "@mercuryworkshop/epoxy-transport": "^2.1.28",
-    "@mercuryworkshop/libcurl-transport": "^1.5.2"
+    "@mercuryworkshop/epoxy-transport": "^3.0.2",
+    "@mercuryworkshop/libcurl-transport": "^2.0.6",
+    "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
+    "@mercuryworkshop/scramjet-controller": "0.0.14",
+    "@mercuryworkshop/scramjet-utils": "0.0.3",
+    "cheddar-proxy": "file:.."
   }
 }

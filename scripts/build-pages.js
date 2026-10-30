@@ -22,10 +22,11 @@ for (const entry of ["injector.html", "robots.txt", "core", "loader", "proxy-ass
 await cp(path.join(output, "injector.html"), path.join(output, "index.html"));
 
 const modules = [
-  ["@mercuryworkshop/bare-mux/dist", "baremux"],
+  ["@mercuryworkshop/scramjet/dist", "scram"],
+  ["@mercuryworkshop/scramjet-controller/dist", "controller"],
+  ["@mercuryworkshop/scramjet-utils/dist", "utils"],
   ["@mercuryworkshop/epoxy-transport/dist", "epoxy"],
   ["@mercuryworkshop/libcurl-transport/dist", "libcurl"],
-  ["@mercuryworkshop/bare-as-module3/dist", "baremod"],
 ];
 for (const [source, destination] of modules) {
   await cp(path.join(installedModules, source), path.join(output, destination), { recursive: true });
@@ -36,7 +37,7 @@ const configSource = await readFile(runtimeConfig, "utf8");
 await writeFile(runtimeConfig, configSource.replace("cloudflarePages: false", "cloudflarePages: true"));
 
 await writeFile(path.join(output, "_headers"), [
-  "/proxy-assets/ultraworker.js",
+  "/proxy-assets/scramjet-worker.js",
   "  Service-Worker-Allowed: /",
   "  Cache-Control: public, max-age=3600",
   "",

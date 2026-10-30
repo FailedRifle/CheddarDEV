@@ -1358,22 +1358,20 @@
           <h3 class="settings-section-title">Proxy</h3>
           <div class="settings-group">
             <label class="setting-card">
-              <span class="setting-copy"><span class="setting-title">Transport</span><span class="setting-description">The transport carries page requests between the browser and its proxy backend. Epoxy connects through a Wisp WebSocket and handles many modern web connections; Bare Server uses the Bare v3 protocol; Libcurl uses a libcurl-based network transport. A transport is not a privacy or anonymity tool, and sites may still identify or block proxy traffic.</span></span>
+              <span class="setting-copy"><span class="setting-title">Transport</span><span class="setting-description">The transport carries page requests between Scramjet and the proxy server. Epoxy and Libcurl connect through the Wisp WebSocket. A transport is not a privacy or anonymity tool, and sites may still identify or block proxy traffic.</span></span>
               <select data-setting="transport" aria-label="Transport">
                 <option value="epoxy">Epoxy</option>
-                <option value="bare">Bare Server</option>
                 <option value="libcurl">Libcurl</option>
               </select>
             </label>
             <label class="setting-card">
-              <span class="setting-copy"><span class="setting-title">Backend</span><span class="setting-description">The backend rewrites a website's URLs and requests so it can run inside the browser. Ultraviolet (UV) uses a service worker to route and rewrite page requests. Scramjet uses its own rewriting and service-worker engine and may work better with some pages, but can behave differently. Either backend can be blocked by a website; neither hides proxy use or guarantees sign-in and media playback.</span></span>
+              <span class="setting-copy"><span class="setting-title">Backend</span><span class="setting-description">Scramjet rewrites website URLs and routes page requests through its service worker. Sites may still identify or block proxy traffic, and sign-in or media playback can vary by site.</span></span>
               <select data-setting="backend" aria-label="Backend">
-                <option value="uv">Ultraviolet</option>
                 <option value="scramjet">Scramjet</option>
               </select>
             </label>
             <label class="setting-card">
-              <span class="setting-copy"><span class="setting-title">Search Engine</span><span class="setting-description">Choose where text searches are sent. DuckDuckGo uses Epoxy when Bare Server is selected.</span></span>
+              <span class="setting-copy"><span class="setting-title">Search Engine</span><span class="setting-description">Choose where text searches are sent.</span></span>
               <select data-setting="search-engine" aria-label="Search Engine">
                 <option value="https://duckduckgo.com/?q=%s">DuckDuckGo</option>
                 <option value="https://search.brave.com/search?q=%s">Brave</option>
@@ -2022,20 +2020,13 @@ let ANNOUNCEMENT_TEXT = "";
           .some(domain => host === domain || host.endsWith(`.${domain}`));
       } catch { return false; }
     }
-    function sourceUrlFromFrameLocation(value) {
+    function sourceUrlFromFrameLocation(value, frame = null) {
       let current;
       try { current = new URL(value); } catch { return ""; }
       if (current.origin !== location.origin) return current.href;
-      const uvPrefix = window.__uv$config?.prefix || "/proxy-assets/uv/service/";
-      if (current.pathname.startsWith(uvPrefix)) {
-        try {
-          const decoded = window.__uv$config?.decodeUrl?.(current.pathname.slice(uvPrefix.length));
-          if (/^https?:\/\//i.test(decoded || "")) return decoded;
-        } catch { /* Ignore invalid or incomplete proxy locations. */ }
-      }
       const scramjetPrefix = "/proxy-assets/scramjet/";
       if (current.pathname.startsWith(scramjetPrefix)) {
-        const decoded = window.scramjet?.decodeUrl?.(current.href);
+        const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
         if (/^https?:\/\//i.test(decoded || "")) return decoded;
       }
       if (current.pathname.startsWith("/proxy-assets/")) return "";
@@ -2045,21 +2036,15 @@ let ANNOUNCEMENT_TEXT = "";
       const match = String(value || "").match(/^cheddar:\/\/search(?:\/[^?]*)?\?([^#]*)/i);
       return match ? new URLSearchParams(match[1]).get("url") || "" : "";
     }
-    function upstreamUrlFromProxyLocation(value) {
+    function upstreamUrlFromProxyLocation(value, frame = null) {
       try {
         const current = new URL(value, location.href);
         if (current.origin !== location.origin) {
           return /^https?:$/i.test(current.protocol) ? current.href : "";
         }
-        const uvPrefix = "/proxy-assets/uv/service/";
-        if (current.pathname.startsWith(uvPrefix)) {
-          const encoded = current.pathname.slice(uvPrefix.length) + current.search + current.hash;
-          const decoded = window.Ultraviolet?.codec?.xor?.decode(encoded);
-          return /^https?:\/\//i.test(decoded || "") ? decoded : "";
-        }
         const scramjetPrefix = "/proxy-assets/scramjet/";
         if (current.pathname.startsWith(scramjetPrefix)) {
-          const decoded = window.scramjet?.decodeUrl?.(current.href);
+          const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
           return /^https?:\/\//i.test(decoded || "") ? decoded : "";
         }
         if (current.pathname.startsWith("/proxy-assets/")) return "";
@@ -2069,7 +2054,7 @@ let ANNOUNCEMENT_TEXT = "";
     let proxyRouterPromise;
     function loadProxyRouter() {
       if (!proxyRouterPromise) {
-        proxyRouterPromise = import("/proxy-assets/router.js?v=16").catch(error => {
+        proxyRouterPromise = import("/proxy-assets/scramjet-router.js?v=2.0.67-alpha.2").catch(error => {
           proxyRouterPromise = null;
           throw error;
         });
@@ -2136,12 +2121,16 @@ let ANNOUNCEMENT_TEXT = "";
       // sign-in redirect and popup flow stay on the same proxy backend.
       if (isNvidiaUrl(url)) tab.proxyBackend = "SJ";
       let proxiedUrl;
+      const pane = paneEls[tab.id];
+      const frame = tab.kind === "browser"
+        ? pane?.querySelector("[data-proxy-frame]") || prepareNamedProxyFrame(tab, `cheddar-proxy-${tab.id}`)
+        : pane?.querySelector("iframe");
       if (tab.kind === "browser") setProxyLoading(tab, true, url);
       try {
-        proxiedUrl = await proxyExternalUrl(url, tab.proxyBackend ? { backend: tab.proxyBackend } : {});
+        if (!frame) throw new Error("Could not find the destination iframe for the proxy.");
+        proxiedUrl = await proxyExternalUrl(url, { frame });
       } catch (error) {
         console.error("Could not start proxied browser navigation:", error);
-        const pane = paneEls[tab.id];
         if (tab.kind === "browser" && pane) {
           setProxyLoading(tab, false);
           const frame = pane.querySelector("[data-proxy-frame]");
@@ -2165,14 +2154,12 @@ let ANNOUNCEMENT_TEXT = "";
         tab.src = proxiedUrl;
         tab.addr = addressForDisplay(addr);
         tab.title = title;
-        paneEls[tab.id].querySelector("iframe").src = proxiedUrl;
+        if (frame.src !== proxiedUrl) frame.src = proxiedUrl;
         if (tab.id === activeTabId) addressInput.value = tab.addr;
         renderTabStrip();
         return true;
       }
-      const pane = paneEls[tab.id];
       pane.querySelectorAll(".view").forEach(view => view.classList.remove("active"));
-      const frame = pane.querySelector("[data-proxy-frame]") || prepareNamedProxyFrame(tab, `cheddar-proxy-${tab.id}`);
       frame.title = title || "Proxied page";
       frame.style.display = "block";
       tab.searchMode = /^cheddar:\/\/search(?:\/|\?)/i.test(addressForDisplay(addr));
@@ -2182,7 +2169,7 @@ let ANNOUNCEMENT_TEXT = "";
         try { tab.searchHost = new URL(url).hostname.toLowerCase(); } catch { /* Search host is used only to classify result navigation. */ }
       }
       tab.pendingProxyUrl = url;
-      frame.src = proxiedUrl;
+      if (frame.src !== proxiedUrl) frame.src = proxiedUrl;
       tab.proxyUrl = proxiedUrl;
       tab.displayAddr = addressForDisplay(addr);
       tab.title = title;
@@ -2200,9 +2187,9 @@ let ANNOUNCEMENT_TEXT = "";
       return true;
     }
     function resolveProxyDestination(sourcePage, rawUrl) {
-      const sourceUrl = sourceUrlFromFrameLocation(sourcePage?.location?.href || "") || location.href;
+      const sourceUrl = sourceUrlFromFrameLocation(sourcePage?.location?.href || "", sourcePage?.frameElement) || location.href;
       const candidate = new URL(String(rawUrl || ""), sourceUrl);
-      return sourceUrlFromFrameLocation(candidate.href) || candidate.href;
+      return sourceUrlFromFrameLocation(candidate.href, sourcePage?.frameElement) || candidate.href;
     }
     function popupHandleForBlankTab(tab, frame, sourcePage) {
       const locationHandle = {};
@@ -2281,7 +2268,7 @@ let ANNOUNCEMENT_TEXT = "";
         try { page.__cheddarProxyBackend = tab.proxyBackend || ""; } catch { /* Proxy pages may make their window read-only. */ }
         const syncHistory = (replaceCurrent = false) => {
           try {
-            const current = upstreamUrlFromProxyLocation(page.location.href);
+            const current = upstreamUrlFromProxyLocation(page.location.href, frame);
             if (!current) return;
             recordBrowserNavigation(tab, current, page.document.title, replaceCurrent);
           } catch { /* The frame may be between documents. */ }
@@ -2350,7 +2337,7 @@ let ANNOUNCEMENT_TEXT = "";
             try { targetFrame.contentWindow.opener = page; } catch { /* Keep the form target in Cheddar if opener is restricted. */ }
             tab.searchMode = false;
             tab.searchQuery = "";
-            const action = sourceUrlFromFrameLocation(form.action || page.location.href);
+            const action = sourceUrlFromFrameLocation(form.action || page.location.href, frame);
             if (action) {
               const addr = siteAddressForUrl(action);
               tab.displayAddr = addr;
@@ -2371,7 +2358,7 @@ let ANNOUNCEMENT_TEXT = "";
     }
     function recordBrowserNavigation(tab, url, pageTitle = "", replaceCurrent = false) {
       if (tab.kind !== "browser") return;
-      url = sourceUrlFromFrameLocation(url);
+      url = sourceUrlFromFrameLocation(url, paneEls[tab.id]?.querySelector("[data-proxy-frame]"));
       if (!url) return;
       if (tab.pendingProxyUrl) {
         tab.pendingProxyUrl = "";
@@ -2476,18 +2463,16 @@ let ANNOUNCEMENT_TEXT = "";
       const status = pane.querySelector("[data-settings-status]");
       const cloakStatus = pane.querySelector("[data-cloak-status]");
       const savedTransport = localStorage.getItem("proxy-transport");
-      backend.value = localStorage.getItem("proxy-backend") === "uv" || localStorage.getItem("proxyType") === "UV" ? "uv" : "scramjet";
-      const cloudflarePages = window.CheddarRuntime?.cloudflarePages === true;
-      const bareOption = transport.querySelector('option[value="bare"]');
-      if (cloudflarePages && bareOption) bareOption.hidden = true;
-      if (cloudflarePages && savedTransport === "bare") {
+      backend.value = "scramjet";
+      backend.disabled = true;
+      localStorage.setItem("proxy-backend", "scramjet");
+      localStorage.setItem("proxyType", "SJ");
+      if (savedTransport === "bare") {
         localStorage.setItem("proxy-transport", "epoxy");
         localStorage.setItem("transport", "epoxy");
         localStorage.setItem("transportType", "epoxy");
       }
-      transport.value = cloudflarePages && savedTransport === "bare"
-        ? "epoxy"
-        : ["bare", "epoxy", "libcurl"].includes(savedTransport) ? savedTransport : "epoxy";
+      transport.value = ["epoxy", "libcurl"].includes(savedTransport) ? savedTransport : "epoxy";
       searchEngine.value = selectedSearchEngine();
       const updateCloakPreview = (value) => {
         const preset = appCloaks[value] || appCloaks.default;
@@ -2535,20 +2520,18 @@ let ANNOUNCEMENT_TEXT = "";
         try {
           const router = await loadProxyRouter();
           await router.configureTransport(requested);
-          status.textContent = `Transport active: ${requested === "bare" ? "Bare Server" : requested}.`;
+          status.textContent = `Transport active: ${requested}.`;
         } catch (error) {
           const saved = localStorage.getItem("proxy-transport");
-          transport.value = ["bare", "epoxy", "libcurl"].includes(saved) ? saved : "epoxy";
+          transport.value = ["epoxy", "libcurl"].includes(saved) ? saved : "epoxy";
           status.textContent = `Could not apply transport: ${error?.message || error}`;
         } finally {
           transport.disabled = false;
         }
       });
       backend.addEventListener("change", () => {
-        const value = backend.value;
-        localStorage.setItem("proxy-backend", value);
-        localStorage.setItem("proxyType", value === "scramjet" ? "SJ" : "UV");
-        status.textContent = `Backend saved: ${value === "uv" ? "Ultraviolet" : "Scramjet"}.`;
+        backend.value = "scramjet";
+        status.textContent = "Scramjet is the active proxy backend.";
       });
       searchEngine.addEventListener("change", () => {
         localStorage.setItem("searchEngine", searchEngine.value);
@@ -2682,10 +2665,10 @@ let ANNOUNCEMENT_TEXT = "";
       const frame = target.frame || paneEls[target.id]?.querySelector("iframe");
       if (!frame || frame.dataset.toolLoading === "true") return;
       frame.dataset.toolLoading = "true";
-      proxyExternalUrl(url).then(proxiedUrl => {
+      proxyExternalUrl(url, { frame }).then(proxiedUrl => {
         if (target.popup) {
-          if (!target.popup.closed) frame.src = proxiedUrl;
-        } else if (frame.isConnected) frame.src = proxiedUrl;
+          if (!target.popup.closed && frame.src !== proxiedUrl) frame.src = proxiedUrl;
+        } else if (frame.isConnected && frame.src !== proxiedUrl) frame.src = proxiedUrl;
       }).catch(error => {
         const message = `Could not open ${title}: ${error?.message || error}`;
         if (target.popup) {
@@ -2699,12 +2682,12 @@ let ANNOUNCEMENT_TEXT = "";
     function gameSlug(game) {
       return normalizeGameSlug(game?.src || game?.name);
     }
-    async function resolveGameFrameUrl(game) {
+    async function resolveGameFrameUrl(frame, game) {
       const url = new URL(game.url, location.origin);
       if (url.origin === location.origin && url.pathname.startsWith("/core/games/")) return url.href;
       if (url.protocol !== "https:") throw new Error("Only HTTPS game links are supported.");
       if (/\.html?(?:$|[?#])/i.test(url.pathname)) return new URL(`/api/game-document?url=${encodeURIComponent(url.href)}`, location.origin).href;
-      return new URL(await proxyExternalUrl(url.href), location.origin).href;
+      return new URL(await proxyExternalUrl(url.href, { frame }), location.origin).href;
     }
     async function loadGameInFrame(frame, game) {
       frame.addEventListener("load", () => {
@@ -2713,15 +2696,16 @@ let ANNOUNCEMENT_TEXT = "";
         try { documentText = frame.contentDocument?.body?.textContent?.trim() || ""; } catch { return; }
         if (!documentText.startsWith("Could not load the game document:")) return;
         frame.dataset.gameProxyFallback = "true";
-        proxyExternalUrl(game.url).then(proxiedUrl => {
-          if (frame.isConnected) frame.src = proxiedUrl;
+        proxyExternalUrl(game.url, { frame }).then(proxiedUrl => {
+          if (frame.isConnected && frame.src !== proxiedUrl) frame.src = proxiedUrl;
         }).catch(error => {
           if (frame.isConnected) {
             frame.srcdoc = `<p style="font:14px sans-serif;color:white;background:#131415;padding:24px">Could not open game: ${escapeHtml(error?.message || error)}</p>`;
           }
         });
       });
-      frame.src = await resolveGameFrameUrl(game);
+      const frameUrl = await resolveGameFrameUrl(frame, game);
+      if (frame.src !== frameUrl) frame.src = frameUrl;
     }
     function openGameOutsideCheddar(game, mode) {
       const slug = gameSlug(game), target = `about:blank#${encodeURIComponent(slug)}`;
@@ -3387,7 +3371,7 @@ let ANNOUNCEMENT_TEXT = "";
       if (!tab || tab.kind !== "browser" || !(tab.proxyUrl || tab.pendingProxyUrl)) return "";
       const frame = paneEls[tab.id]?.querySelector("[data-proxy-frame]");
       try {
-        const current = upstreamUrlFromProxyLocation(frame?.contentWindow?.location?.href || "");
+        const current = upstreamUrlFromProxyLocation(frame?.contentWindow?.location?.href || "", frame);
         if (/^https?:\/\//i.test(current)) return current;
       } catch { /* Fall back to the requested page when frame access is unavailable. */ }
       if (/^https?:\/\//i.test(tab.pendingProxyUrl || "")) return tab.pendingProxyUrl;
@@ -3425,13 +3409,13 @@ let ANNOUNCEMENT_TEXT = "";
       if (!popup) { choice.textContent = "Popup blocked — allow popups and retry"; return; }
       openPageMenu.querySelectorAll("button").forEach(button => { button.disabled = true; });
       try {
-        const proxiedUrl = await proxyExternalUrl(sourceUrl, tab.proxyBackend ? { backend: tab.proxyBackend } : {});
         const site = new URL(sourceUrl).hostname;
         popup.document.open();
         popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(site)}</title><style>html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#000;overflow:hidden}iframe{display:block}</style></head><body><iframe title="${escapeHtml(site)}"></iframe>${popupUnloadGuardMarkup}</body></html>`);
         popup.document.close();
         const proxyFrame = popup.document.querySelector("iframe");
-        proxyFrame.src = proxiedUrl;
+        const proxiedUrl = await proxyExternalUrl(sourceUrl, { frame: proxyFrame });
+        if (proxyFrame.src !== proxiedUrl) proxyFrame.src = proxiedUrl;
         popup.history.replaceState(null, "", `#${encodeURIComponent(site)}`);
         closeTab(tab.id);
         closeOpenPageMenu();

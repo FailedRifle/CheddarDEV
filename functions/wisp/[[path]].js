@@ -25,8 +25,12 @@ export async function onRequest({ request, env }) {
     return new Response("Wisp upstream configuration is invalid", { status: 500, headers: { "cache-control": "no-store" } });
   }
 
-  const headers = new Headers(request.headers);
-  headers.set("Origin", upstreamUrl.origin);
+  // Match Vaulted's relay: validate the browser origin against this Pages
+  // deployment, then preserve that origin for the upstream Wisp service.
+  const headers = new Headers({ Upgrade: "websocket" });
+  headers.set("Origin", origin);
+  const protocol = request.headers.get("Sec-WebSocket-Protocol");
+  if (protocol) headers.set("Sec-WebSocket-Protocol", protocol);
 
   try {
     const response = await fetch(upstreamUrl, { method: "GET", headers });

@@ -20,11 +20,11 @@ The report form and CheddarGPT logging remain available. Set these as encrypted 
 - `DISCORD_REPORT_WEBHOOK`
 - `DISCORD_GPT_LOG_WEBHOOK`
 
-The Wisp relay defaults to the same upstream used by Vaulted (`https://lunaar.org/wisp/`). If that endpoint changes, set the Pages variable `WISP_UPSTREAM` to another HTTPS Wisp URL ending in `/wisp/`.
+The browser connects to the same-origin `/wisp/` route, as Vaulted does. Pages relays the WebSocket to the same upstream (`https://lunaar.org/wisp/`) and preserves the validated Pages origin. If that endpoint changes, set the Pages variable `WISP_UPSTREAM` to another HTTPS Wisp URL ending in `/wisp/`. The browser checks the WebSocket before initializing the proxy and retries up to three times, with an eight-second timeout per attempt.
 
 ## Proxy transports
 
-Pages serves Epoxy and Libcurl through the Wisp relay by default. The Node Bare Server is not included in the Pages runtime because it depends on a persistent Node WebSocket server; the Pages build hides that transport so users do not select an endpoint that cannot work there. The original Node/Vercel setup retains the Bare Server option.
+The browser uses Scramjet 2 with the Scramjet Controller and a same-origin Wisp WebSocket relay. Epoxy and Libcurl are the available transports. The client checks the Wisp connection before starting, registers the proxy service worker, waits for the controller, and keeps the worker alive while the browser is open. Ultraviolet and the older Scramjet assets are no longer part of the proxy runtime.
 
 ## Local Pages preview
 

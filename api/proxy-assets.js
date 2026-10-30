@@ -1,14 +1,15 @@
 import { createReadStream } from "node:fs";
 import path from "node:path";
-import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
-import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 
+const modules = path.join(process.cwd(), "node_modules/@mercuryworkshop");
 const assets = {
-  "baremux-index": path.join(baremuxPath, "index.mjs"),
-  "baremux-worker": path.join(baremuxPath, "worker.js"),
-  "epoxy-index": path.join(epoxyPath, "index.mjs"),
-  "libcurl-index": path.join(process.cwd(), "node_modules/@mercuryworkshop/libcurl-transport/dist/index.mjs"),
-  "baremod-index": path.join(process.cwd(), "node_modules/@mercuryworkshop/bare-as-module3/dist/index.mjs"),
+  scramjet: path.join(modules, "scramjet/dist/scramjet.js"),
+  "controller-api": path.join(modules, "scramjet-controller/dist/controller.api.js"),
+  "controller-worker": path.join(modules, "scramjet-controller/dist/controller.sw.js"),
+  "controller-inject": path.join(modules, "scramjet-controller/dist/controller.inject.js"),
+  utils: path.join(modules, "scramjet-utils/dist/scramjet-utils.js"),
+  epoxy: path.join(modules, "epoxy-transport/dist/index.mjs"),
+  libcurl: path.join(modules, "libcurl-transport/dist/index.mjs"),
 };
 
 export default function handler(request, response) {
