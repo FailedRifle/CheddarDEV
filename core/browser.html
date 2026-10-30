@@ -887,6 +887,17 @@
       cursor: pointer;
       outline: none;
     }
+    .setting-card .setting-value {
+      min-width: 200px;
+      padding: 6px 10px;
+      color: var(--text);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      text-align: center;
+    }
     .setting-card select:focus { border-color: var(--border-hover); }
     .setting-card select option { background: var(--card-bg); }
     .setting-card .setting-action {
@@ -981,6 +992,7 @@
         gap: 10px;
       }
       .setting-card select,
+      .setting-card .setting-value,
       .setting-card .setting-action { width: 100%; min-width: 0; }
       .theme-options { grid-template-columns: minmax(0, 320px); }
     }
@@ -1364,12 +1376,10 @@
                 <option value="openssl">OpenSSL</option>
               </select>
             </label>
-            <label class="setting-card">
-              <span class="setting-copy"><span class="setting-title">Backend</span><span class="setting-description">Vaulted’s bundled controller rewrites website URLs and routes page requests through its service worker. Sites may still identify or block proxy traffic, and sign-in or media playback can vary by site.</span></span>
-              <select data-setting="backend" aria-label="Backend">
-                <option value="scramjet">Vaulted Proxy</option>
-              </select>
-            </label>
+            <div class="setting-card">
+              <span class="setting-copy"><span class="setting-title">Backend</span><span class="setting-description">Cheddar uses Vaulted’s proxy controller for all sites.</span></span>
+              <output class="setting-value" data-current-backend aria-label="Current proxy backend">Vaulted Proxy</output>
+            </div>
             <label class="setting-card">
               <span class="setting-copy"><span class="setting-title">Search Engine</span><span class="setting-description">Choose where text searches are sent.</span></span>
               <select data-setting="search-engine" aria-label="Search Engine">
@@ -2007,25 +2017,12 @@ let ANNOUNCEMENT_TEXT = "";
       try { target = decodeURI(target); } catch { /* Keep a partially encoded URL usable. */ }
       return /^https?:\/\//i.test(target) ? target : `https://${target}`;
     }
-    function isYouTubeUrl(value) {
-      try {
-        const host = new URL(value).hostname.toLowerCase();
-        return host === "youtu.be" || host === "youtube.com" || host.endsWith(".youtube.com");
-      } catch { return false; }
-    }
-    function isNvidiaUrl(value) {
-      try {
-        const host = new URL(value).hostname.toLowerCase();
-        return ["nvidia.com", "geforcenow.com", "nvidiagrid.net"]
-          .some(domain => host === domain || host.endsWith(`.${domain}`));
-      } catch { return false; }
-    }
     function sourceUrlFromFrameLocation(value, frame = null) {
       let current;
       try { current = new URL(value); } catch { return ""; }
       if (current.origin !== location.origin) return current.href;
-      const scramjetPrefix = "/iljfw8/";
-      if (current.pathname.startsWith(scramjetPrefix)) {
+      const vaultedProxyPrefix = "/iljfw8/";
+      if (current.pathname.startsWith(vaultedProxyPrefix)) {
         const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
         if (/^https?:\/\//i.test(decoded || "")) return decoded;
       }
@@ -2042,8 +2039,8 @@ let ANNOUNCEMENT_TEXT = "";
         if (current.origin !== location.origin) {
           return /^https?:$/i.test(current.protocol) ? current.href : "";
         }
-        const scramjetPrefix = "/iljfw8/";
-        if (current.pathname.startsWith(scramjetPrefix)) {
+        const vaultedProxyPrefix = "/iljfw8/";
+        if (current.pathname.startsWith(vaultedProxyPrefix)) {
           const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
           return /^https?:\/\//i.test(decoded || "") ? decoded : "";
         }
@@ -2116,10 +2113,6 @@ let ANNOUNCEMENT_TEXT = "";
       return openProxyInTab(tab, url, addr, title, null, historyEntry);
     }
     async function openProxyInTab(tab, url, addr, title, faviconUrl = null, historyEntry = url, addToHistory = true) {
-      if (isYouTubeUrl(url)) tab.proxyBackend = "SJ";
-      // Keep GeForce NOW and its NVIDIA auth subdomains on Scramjet so the
-      // sign-in redirect and popup flow stay on the same proxy backend.
-      if (isNvidiaUrl(url)) tab.proxyBackend = "SJ";
       let proxiedUrl;
       const pane = paneEls[tab.id];
       const frame = tab.kind === "browser"
@@ -2219,7 +2212,6 @@ let ANNOUNCEMENT_TEXT = "";
     }
     function openProxyDestinationInNewTab(sourcePage, rawUrl) {
       const tab = addBrowserTab();
-      tab.proxyBackend = sourcePage?.__cheddarProxyBackend || "";
       const popupFrame = prepareNamedProxyFrame(tab, `cheddar-popup-${tab.id}`);
       const popupWindow = popupFrame.contentWindow;
       try { popupWindow.opener = sourcePage || null; } catch { /* A browser policy may keep opener read-only. */ }
@@ -2265,7 +2257,6 @@ let ANNOUNCEMENT_TEXT = "";
         let page;
         try { page = frame.contentWindow; } catch { return; }
         if (!page) return;
-        try { page.__cheddarProxyBackend = tab.proxyBackend || ""; } catch { /* Proxy pages may make their window read-only. */ }
         const syncHistory = (replaceCurrent = false) => {
           try {
             const current = upstreamUrlFromProxyLocation(page.location.href, frame);
@@ -2304,19 +2295,6 @@ let ANNOUNCEMENT_TEXT = "";
             if (!link) return;
             const target = link.target || page.document.querySelector("base[target]")?.target || "";
             const opensOutside = (target && target.toLowerCase() !== "_self") || event.ctrlKey || event.metaKey || event.shiftKey || event.button === 1;
-            const destination = resolveProxyDestination(page, link.href);
-            if (isYouTubeUrl(destination) && tab.proxyBackend !== "SJ") {
-              event.preventDefault();
-              event.stopPropagation();
-              if (opensOutside) {
-                openProxyDestinationInNewTab(page, link.href);
-                return;
-              }
-              tab.proxyBackend = "SJ";
-              const addr = siteAddressForUrl(destination);
-              void openProxyInTab(tab, destination, addr, new URL(destination).hostname, null, addr);
-              return;
-            }
             if (!opensOutside) return;
             event.preventDefault();
             event.stopPropagation();
@@ -2331,7 +2309,6 @@ let ANNOUNCEMENT_TEXT = "";
             event.preventDefault();
             event.stopPropagation();
             const tab = addBrowserTab();
-            tab.proxyBackend = page.__cheddarProxyBackend || "";
             const frameName = `cheddar-redirect-${tab.id}`;
             const targetFrame = prepareNamedProxyFrame(tab, frameName);
             try { targetFrame.contentWindow.opener = page; } catch { /* Keep the form target in Cheddar if opener is restricted. */ }
@@ -2450,7 +2427,6 @@ let ANNOUNCEMENT_TEXT = "";
         if (themeStatus) themeStatus.textContent = themeName(selected) + " theme applied.";
       }));
       const transport = pane.querySelector('[data-setting="transport"]');
-      const backend = pane.querySelector('[data-setting="backend"]');
       const searchEngine = pane.querySelector('[data-setting="search-engine"]');
       const cloakOptions = pane.querySelector("[data-cloak-options]");
       const cloakPreviewIcon = pane.querySelector("[data-cloak-preview-icon]");
@@ -2467,10 +2443,6 @@ let ANNOUNCEMENT_TEXT = "";
         savedTransport = "openssl";
         localStorage.setItem("proxy-transport", savedTransport);
       }
-      backend.value = "scramjet";
-      backend.disabled = true;
-      localStorage.setItem("proxy-backend", "scramjet");
-      localStorage.setItem("proxyType", "SJ");
       if (savedTransport === "bare") {
         localStorage.setItem("proxy-transport", "epoxy");
         localStorage.setItem("transport", "epoxy");
@@ -2532,10 +2504,6 @@ let ANNOUNCEMENT_TEXT = "";
         } finally {
           transport.disabled = false;
         }
-      });
-      backend.addEventListener("change", () => {
-        backend.value = "scramjet";
-        status.textContent = "Scramjet is the active proxy backend.";
       });
       searchEngine.addEventListener("change", () => {
         localStorage.setItem("searchEngine", searchEngine.value);

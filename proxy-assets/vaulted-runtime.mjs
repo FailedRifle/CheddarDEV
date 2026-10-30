@@ -207,7 +207,7 @@ export async function setTransport(name = getTransportChoice(), { persist = true
 }
 
 export function getProxyType() {
-  return "SJ";
+  return "Vaulted Proxy";
 }
 
 export function getTransport() {
