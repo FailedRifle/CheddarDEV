@@ -8,55 +8,16 @@ import {
   getOriginalUrl,
 } from "/proxy-assets/vaulted-runtime.mjs?v=vaulted-20261020";
 
-// Vaulted routes proxy traffic through the current host's Wisp endpoint.
-const wisp = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/wisp/`;
-const handshakeTimeout = 8000;
-const startupAttempts = 3;
+// Use the same direct Wisp endpoint as the working Cheddar deployment.
+// Cloudflare Pages' same-origin /wisp/ relay closes WebSocket handshakes.
+const wisp = "wss://lunaar.org/wisp/";
 let proxySetupPromise;
 let proxyReconnectPromise;
 
-async function checkWispConnection() {
-  await new Promise((resolve, reject) => {
-    let socket;
-    let settled = false;
-    let timer;
-    const finish = (error) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      if (socket) {
-        socket.onopen = socket.onerror = socket.onclose = null;
-        try { socket.close(); } catch {}
-      }
-      error ? reject(error) : resolve();
-    };
-    const fail = () => finish(new Error(`Vaulted could not open its proxy WebSocket at ${wisp}.`));
-    timer = setTimeout(fail, handshakeTimeout);
-    try {
-      socket = new WebSocket(wisp);
-      socket.onopen = () => finish();
-      socket.onerror = fail;
-      socket.onclose = fail;
-    } catch (error) {
-      finish(error);
-    }
-  });
-}
-
 async function bootVaultedProxy() {
-  let lastError;
-  for (let attempt = 1; attempt <= startupAttempts; attempt++) {
-    try {
-      await checkWispConnection();
-      await setWisp(wisp);
-      await setTransport(getTransportChoice());
-      return await ensureProxyReady();
-    } catch (error) {
-      lastError = error;
-      if (attempt < startupAttempts) await new Promise(resolve => setTimeout(resolve, Math.min(attempt * 1000, 5000)));
-    }
-  }
-  throw lastError;
+  await setWisp(wisp);
+  await setTransport(getTransportChoice());
+  return ensureProxyReady();
 }
 
 function prepareProxy() {
@@ -73,7 +34,6 @@ function reconnectProxy() {
   if (!proxyReconnectPromise) {
     proxyReconnectPromise = (async () => {
       await proxySetupPromise?.catch(() => {});
-      await checkWispConnection();
       await setWisp(wisp);
       await setTransport(getTransportChoice(), { persist: false, reconnect: true });
       await ensureProxyReady();

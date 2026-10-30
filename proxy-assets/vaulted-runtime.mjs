@@ -27,7 +27,10 @@ const vaultedCodec = {
   },
 };
 const managedFrames = new WeakMap();
-let wispURL = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/wisp/`;
+// Cloudflare Pages' same-origin Wisp relay closes the WebSocket handshake
+// before the transport can use it. Match the working Cheddar deployment and
+// connect directly to the Wisp service.
+let wispURL = "wss://lunaar.org/wisp/";
 let selectedTransport = getTransportChoice();
 let currentTransport;
 let currentTransportName;

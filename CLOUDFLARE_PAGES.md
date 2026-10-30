@@ -20,11 +20,11 @@ The report form and CheddarGPT logging remain available. Set these as encrypted 
 - `DISCORD_REPORT_WEBHOOK`
 - `DISCORD_GPT_LOG_WEBHOOK`
 
-The browser connects to the same-origin `/wisp/` route, as Vaulted does. Pages relays the WebSocket to the same upstream (`https://lunaar.org/wisp/`) and preserves the validated Pages origin. If that endpoint changes, set the Pages variable `WISP_UPSTREAM` to another HTTPS Wisp URL ending in `/wisp/`. The browser checks the WebSocket before initializing the proxy and retries up to three times, with an eight-second timeout per attempt.
+The browser proxy connects directly to `wss://lunaar.org/wisp/`, matching the working Cheddar deployment. The same-origin Pages `/wisp/` function is not used by the browser proxy because Cloudflare Pages closes that relayed WebSocket handshake (close code 1006).
 
 ## Proxy transports
 
-The browser uses the proxy runtime assets bundled in `svg.zip`, with Vaulted’s same-origin Wisp relay, URL codec, and controller startup flow. The bundled controller is Scramjet-based under Vaulted’s renamed identifiers. Epoxy and OpenSSL are the available transports. The client checks the Wisp connection before starting and retries startup up to three times.
+The browser uses the proxy runtime assets bundled in `svg.zip`, with Vaulted’s URL codec and controller startup flow. The bundled controller is Scramjet-based under Vaulted’s renamed identifiers. Epoxy and OpenSSL are the available transports; both connect to the direct Wisp endpoint above.
 
 ## Local Pages preview
 
