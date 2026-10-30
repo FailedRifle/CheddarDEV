@@ -22,9 +22,6 @@ for (const entry of ["injector.html", "robots.txt", "core", "loader", "proxy-ass
 await cp(path.join(output, "injector.html"), path.join(output, "index.html"));
 
 const modules = [
-  ["@mercuryworkshop/scramjet/dist", "scram"],
-  ["@mercuryworkshop/scramjet-controller/dist", "controller"],
-  ["@mercuryworkshop/scramjet-utils/dist", "utils"],
   ["@mercuryworkshop/epoxy-transport/dist", "epoxy"],
   ["@mercuryworkshop/libcurl-transport/dist", "libcurl"],
 ];
@@ -37,7 +34,7 @@ const configSource = await readFile(runtimeConfig, "utf8");
 await writeFile(runtimeConfig, configSource.replace("cloudflarePages: false", "cloudflarePages: true"));
 
 await writeFile(path.join(output, "_headers"), [
-  "/proxy-assets/scramjet-worker.js",
+  "/proxy-assets/vaulted/9byt8m.js",
   "  Service-Worker-Allowed: /",
   "  Cache-Control: public, max-age=3600",
   "",

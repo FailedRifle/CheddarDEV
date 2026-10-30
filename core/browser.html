@@ -1358,16 +1358,16 @@
           <h3 class="settings-section-title">Proxy</h3>
           <div class="settings-group">
             <label class="setting-card">
-              <span class="setting-copy"><span class="setting-title">Transport</span><span class="setting-description">The transport carries page requests between Scramjet and the proxy server. Epoxy and Libcurl connect through the Wisp WebSocket. A transport is not a privacy or anonymity tool, and sites may still identify or block proxy traffic.</span></span>
+              <span class="setting-copy"><span class="setting-title">Transport</span><span class="setting-description">Choose the transport Vaulted uses to carry browser requests over its Wisp WebSocket: Epoxy or OpenSSL.</span></span>
               <select data-setting="transport" aria-label="Transport">
                 <option value="epoxy">Epoxy</option>
-                <option value="libcurl">Libcurl</option>
+                <option value="openssl">OpenSSL</option>
               </select>
             </label>
             <label class="setting-card">
-              <span class="setting-copy"><span class="setting-title">Backend</span><span class="setting-description">Scramjet rewrites website URLs and routes page requests through its service worker. Sites may still identify or block proxy traffic, and sign-in or media playback can vary by site.</span></span>
+              <span class="setting-copy"><span class="setting-title">Backend</span><span class="setting-description">Vaulted’s bundled controller rewrites website URLs and routes page requests through its service worker. Sites may still identify or block proxy traffic, and sign-in or media playback can vary by site.</span></span>
               <select data-setting="backend" aria-label="Backend">
-                <option value="scramjet">Scramjet</option>
+                <option value="scramjet">Vaulted Proxy</option>
               </select>
             </label>
             <label class="setting-card">
@@ -2024,7 +2024,7 @@ let ANNOUNCEMENT_TEXT = "";
       let current;
       try { current = new URL(value); } catch { return ""; }
       if (current.origin !== location.origin) return current.href;
-      const scramjetPrefix = "/proxy-assets/scramjet/";
+      const scramjetPrefix = "/iljfw8/";
       if (current.pathname.startsWith(scramjetPrefix)) {
         const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
         if (/^https?:\/\//i.test(decoded || "")) return decoded;
@@ -2042,7 +2042,7 @@ let ANNOUNCEMENT_TEXT = "";
         if (current.origin !== location.origin) {
           return /^https?:$/i.test(current.protocol) ? current.href : "";
         }
-        const scramjetPrefix = "/proxy-assets/scramjet/";
+        const scramjetPrefix = "/iljfw8/";
         if (current.pathname.startsWith(scramjetPrefix)) {
           const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
           return /^https?:\/\//i.test(decoded || "") ? decoded : "";
@@ -2054,7 +2054,7 @@ let ANNOUNCEMENT_TEXT = "";
     let proxyRouterPromise;
     function loadProxyRouter() {
       if (!proxyRouterPromise) {
-        proxyRouterPromise = import("/proxy-assets/scramjet-router.js?v=2.0.67-alpha.2").catch(error => {
+        proxyRouterPromise = import("/proxy-assets/vaulted-router.js?v=vaulted-20261020").catch(error => {
           proxyRouterPromise = null;
           throw error;
         });
@@ -2462,7 +2462,11 @@ let ANNOUNCEMENT_TEXT = "";
       const announcementColor = pane.querySelector('[data-setting="announcement-color"]');
       const status = pane.querySelector("[data-settings-status]");
       const cloakStatus = pane.querySelector("[data-cloak-status]");
-      const savedTransport = localStorage.getItem("proxy-transport");
+      let savedTransport = localStorage.getItem("proxy-transport");
+      if (savedTransport === "libcurl") {
+        savedTransport = "openssl";
+        localStorage.setItem("proxy-transport", savedTransport);
+      }
       backend.value = "scramjet";
       backend.disabled = true;
       localStorage.setItem("proxy-backend", "scramjet");
@@ -2472,7 +2476,7 @@ let ANNOUNCEMENT_TEXT = "";
         localStorage.setItem("transport", "epoxy");
         localStorage.setItem("transportType", "epoxy");
       }
-      transport.value = ["epoxy", "libcurl"].includes(savedTransport) ? savedTransport : "epoxy";
+      transport.value = ["epoxy", "openssl"].includes(savedTransport) ? savedTransport : "epoxy";
       searchEngine.value = selectedSearchEngine();
       const updateCloakPreview = (value) => {
         const preset = appCloaks[value] || appCloaks.default;
@@ -2523,7 +2527,7 @@ let ANNOUNCEMENT_TEXT = "";
           status.textContent = `Transport active: ${requested}.`;
         } catch (error) {
           const saved = localStorage.getItem("proxy-transport");
-          transport.value = ["epoxy", "libcurl"].includes(saved) ? saved : "epoxy";
+          transport.value = ["epoxy", "openssl"].includes(saved) ? saved : "epoxy";
           status.textContent = `Could not apply transport: ${error?.message || error}`;
         } finally {
           transport.disabled = false;

@@ -24,7 +24,7 @@ The browser connects to the same-origin `/wisp/` route, as Vaulted does. Pages r
 
 ## Proxy transports
 
-The browser uses Scramjet 2 with the Scramjet Controller and a same-origin Wisp WebSocket relay. Epoxy and Libcurl are the available transports. The client checks the Wisp connection before starting, registers the proxy service worker, waits for the controller, and keeps the worker alive while the browser is open. Ultraviolet and the older Scramjet assets are no longer part of the proxy runtime.
+The browser uses the proxy runtime assets bundled in `svg.zip`, with Vaulted’s same-origin Wisp relay, URL codec, and controller startup flow. The bundled controller is Scramjet-based under Vaulted’s renamed identifiers. Epoxy and OpenSSL are the available transports. The client checks the Wisp connection before starting and retries startup up to three times.
 
 ## Local Pages preview
 

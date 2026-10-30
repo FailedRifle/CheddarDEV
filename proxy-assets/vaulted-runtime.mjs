@@ -1,14 +1,31 @@
-const stockSW = "/proxy-assets/scramjet-worker.js?v=2.0.67-alpha.2";
+const stockSW = "/proxy-assets/vaulted/9byt8m.js";
 const runtimeScripts = [
-  "/scram/scramjet.js",
-  "/controller/controller.api.js",
-  "/utils/scramjet-utils.js",
+  "/proxy-assets/vaulted/cfvi4/szst2w.js",
+  "/proxy-assets/vaulted/6m9rd/ybnwpk.js",
 ];
 const transportModules = {
   epoxy: "/epoxy/index.mjs?v=3.0.2",
-  libcurl: "/libcurl/index.mjs?v=2.0.6",
+  openssl: "/libcurl/index.mjs?v=2.0.6",
 };
 const validTransports = new Set(Object.keys(transportModules));
+const proxyPathSegment = "iljfw8/";
+const vaultedCodec = {
+  encode(value) {
+    if (!value) return value;
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  },
+  decode(value) {
+    if (!value) return value;
+    let encoded = value.replace(/-/g, "+").replace(/_/g, "/");
+    while (encoded.length % 4) encoded += "=";
+    const binary = atob(encoded);
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  },
+};
 const managedFrames = new WeakMap();
 let wispURL = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/wisp/`;
 let selectedTransport = getTransportChoice();
@@ -18,10 +35,13 @@ let controller;
 let controllerPromise;
 let controllerQueue = Promise.resolve();
 let registerPromise;
-let keepaliveTimer;
 
 function getTransportChoice() {
-  const saved = localStorage.getItem("proxy-transport");
+  let saved = localStorage.getItem("proxy-transport");
+  if (saved === "libcurl") {
+    saved = "openssl";
+    localStorage.setItem("proxy-transport", saved);
+  }
   if (validTransports.has(saved)) return saved;
   if (saved === "bare") localStorage.setItem("proxy-transport", "epoxy");
   return "epoxy";
@@ -60,8 +80,8 @@ function workerMatches(worker) {
   if (!worker) return false;
   try {
     const actual = new URL(worker.scriptURL, location.href);
-    const expected = new URL(stockSW, location.href);
-    return actual.pathname === expected.pathname && actual.search === expected.search;
+    const expectedName = stockSW.split("/").pop();
+    return actual.pathname.split("/").pop() === expectedName;
   } catch {
     return false;
   }
@@ -73,7 +93,7 @@ export async function registerSW() {
     registerPromise = (async () => {
       const registration = await navigator.serviceWorker.register(stockSW, {
         scope: "/",
-        updateViaCache: "none",
+        updateViaCache: "all",
       });
       await navigator.serviceWorker.ready;
       const current = () => {
@@ -86,8 +106,8 @@ export async function registerSW() {
         worker = await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
             cleanup();
-            reject(new Error("The Scramjet service worker did not take control. Reload and try again."));
-          }, 12000);
+            reject(new Error("The Vaulted proxy service worker did not take control. Reload and try again."));
+          }, 45000);
           const check = () => {
             const active = current();
             if (active) {
@@ -122,31 +142,28 @@ async function createTransport(name) {
 }
 
 async function bootController() {
-  const { serviceworker } = await registerSW();
+  const { registration, serviceworker } = await registerSW();
   for (const src of runtimeScripts) await loadScript(src);
 
-  const api = window.$scramjetController;
-  if (!api?.Controller) throw new Error("The Scramjet controller API did not load.");
-  api.assertRuntimeScramjetVersion?.();
+  const api = window._yta30ly;
+  if (!api?.Controller) throw new Error("The Vaulted proxy controller did not load.");
+  api.assertRuntime_e50bgxoVersion?.();
 
   currentTransportName = selectedTransport;
   currentTransport = await createTransport(currentTransportName);
   controller = new api.Controller({
     serviceworker,
     transport: currentTransport,
+    _2ttyc2bConfig: {},
     config: {
-      prefix: "/proxy-assets/scramjet/",
-      scramjetPath: "/scram/scramjet.js",
-      wasmPath: "/scram/scramjet.wasm",
-      injectPath: "/controller/controller.inject.js",
+      prefix: `${new URL(registration.scope).pathname}${proxyPathSegment}`,
+      codec: vaultedCodec,
+      _2ttyc2bPath: "/proxy-assets/vaulted/cfvi4/szst2w.js",
+      wasmPath: "/proxy-assets/vaulted/cfvi4/ses5q6.wasm",
+      injectPath: "/proxy-assets/vaulted/6m9rd/cs0u3t.js",
     },
   });
   await controller.wait();
-  if (!keepaliveTimer) {
-    keepaliveTimer = setInterval(() => {
-      navigator.serviceWorker.controller?.postMessage("keepalive");
-    }, 15000);
-  }
   return controller;
 }
 
@@ -164,7 +181,7 @@ export function ensureProxyReady() {
 }
 
 export async function setTransport(name = getTransportChoice(), { persist = true, reconnect = false } = {}) {
-  if (!validTransports.has(name)) throw new TypeError(`Unsupported Scramjet transport: ${name}`);
+  if (!validTransports.has(name)) throw new TypeError(`Unsupported Vaulted proxy transport: ${name}`);
   selectedTransport = name;
   if (persist) localStorage.setItem("proxy-transport", name);
 
@@ -206,7 +223,7 @@ export async function setWisp(endpoint) {
 
 export async function proxySJ(input, { frame: element } = {}) {
   if (!(element instanceof HTMLIFrameElement)) {
-    throw new TypeError("Scramjet 2 needs the destination iframe so it can register that frame with the controller.");
+    throw new TypeError("The Vaulted proxy needs the destination iframe so it can register that frame with its controller.");
   }
   const instance = await ensureProxyReady();
   let frame = managedFrames.get(element);
@@ -218,13 +235,11 @@ export async function proxySJ(input, { frame: element } = {}) {
   return element.src;
 }
 
-export const proxyUV = proxySJ;
-
 export function getOriginalUrl(value, element) {
   const frame = element && managedFrames.get(element);
-  if (!frame || !window.$scramjet?.unrewriteUrl) return value || "";
+  if (!frame || !window._np0jxat?.unrewriteUrl) return value || "";
   try {
-    return window.$scramjet.unrewriteUrl(value, frame.context) || value || "";
+    return window._np0jxat.unrewriteUrl(value, frame.context) || value || "";
   } catch {
     return value || "";
   }

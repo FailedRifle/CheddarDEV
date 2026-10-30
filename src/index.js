@@ -5,7 +5,6 @@ import path from "node:path";
 import { server as wisp, logging } from "@mercuryworkshop/wisp-js/server";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
-import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import reportHandler from "../api/report.js";
 import gptLogHandler from "../api/gpt-log.js";
 
@@ -13,8 +12,6 @@ logging.set_level(logging.NONE);
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const require = createRequire(import.meta.url);
 const packageDist = (name) => path.dirname(require.resolve(name));
-const controllerPath = packageDist("@mercuryworkshop/scramjet-controller");
-const utilsPath = packageDist("@mercuryworkshop/scramjet-utils");
 const epoxyPath = packageDist("@mercuryworkshop/epoxy-transport");
 const libcurlPath = packageDist("@mercuryworkshop/libcurl-transport");
 const fastify = Fastify({
@@ -34,9 +31,6 @@ const fastify = Fastify({
     }),
 });
 
-fastify.register(fastifyStatic, { root: scramjetPath, prefix: "/scram/", decorateReply: false });
-fastify.register(fastifyStatic, { root: controllerPath, prefix: "/controller/", decorateReply: false });
-fastify.register(fastifyStatic, { root: utilsPath, prefix: "/utils/", decorateReply: false });
 fastify.register(fastifyStatic, { root: epoxyPath, prefix: "/epoxy/", decorateReply: false });
 fastify.register(fastifyStatic, { root: libcurlPath, prefix: "/libcurl/", decorateReply: false });
 fastify.register(fastifyStatic, { root, prefix: "/", decorateReply: true });
@@ -67,7 +61,7 @@ fastify.post("/api/gpt-log", async (request, reply) => {
   await gptLogHandler(request, response);
 });
 fastify.addHook("onSend", async (request, reply, payload) => {
-  if (request.url.startsWith("/proxy-assets/scramjet-worker.js")) {
+  if (request.url.startsWith("/proxy-assets/vaulted/9byt8m.js")) {
     reply.header("Service-Worker-Allowed", "/");
   }
   return payload;
