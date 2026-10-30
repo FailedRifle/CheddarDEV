@@ -52,6 +52,10 @@ await writeFile(path.join(output, "_headers"), [
   "/injector.html",
   "  ! Cross-Origin-Embedder-Policy",
   "",
+  // Pages also serves injector.html through this extensionless URL.
+  "/injector",
+  "  ! Cross-Origin-Embedder-Policy",
+  "",
   "/index.html",
   "  ! Cross-Origin-Embedder-Policy",
   "",
