@@ -41,19 +41,18 @@ await writeFile(path.join(output, "_headers"), [
   "/core/json/games.json",
   "  Cache-Control: public, max-age=600, stale-while-revalidate=86400",
   "",
-  // Vaulted rewrites upstream COEP only when the embedding page is isolated.
-  // This browser shell intentionally supports cross-origin popups, so do not
-  // isolate it: otherwise Chromium blocks proxied documents that omit COEP.
+  "/*",
+  "  Cross-Origin-Opener-Policy: same-origin-allow-popups",
+  "  Cross-Origin-Embedder-Policy: require-corp",
+  "  X-Robots-Tag: noindex, nofollow, noarchive",
+  "",
+  // Remove the inherited COEP after the wildcard rule; Cloudflare processes
+  // matching rules in order. Vaulted proxied frames don't all send COEP.
   "/core/browser",
   "  ! Cross-Origin-Embedder-Policy",
   "",
   "/core/browser.html",
   "  ! Cross-Origin-Embedder-Policy",
-  "",
-  "/*",
-  "  Cross-Origin-Opener-Policy: same-origin-allow-popups",
-  "  Cross-Origin-Embedder-Policy: require-corp",
-  "  X-Robots-Tag: noindex, nofollow, noarchive",
   "",
 ].join("\n"));
 
