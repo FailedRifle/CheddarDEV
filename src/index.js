@@ -61,7 +61,7 @@ fastify.post("/api/gpt-log", async (request, reply) => {
   await gptLogHandler(request, response);
 });
 fastify.addHook("onSend", async (request, reply, payload) => {
-  if (request.url.startsWith("/proxy-assets/vaulted/9byt8m.js")) {
+  if (request.url.startsWith("/9byt8m.js")) {
     reply.header("Service-Worker-Allowed", "/");
   }
   return payload;

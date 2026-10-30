@@ -1,7 +1,7 @@
-const stockSW = "/proxy-assets/vaulted/9byt8m.js";
+const stockSW = "/9byt8m.js";
 const runtimeScripts = [
-  "/proxy-assets/vaulted/cfvi4/szst2w.js",
-  "/proxy-assets/vaulted/6m9rd/ybnwpk.js",
+  "/cfvi4/szst2w.js",
+  "/6m9rd/ybnwpk.js",
 ];
 const transportModules = {
   epoxy: "/epoxy/index.mjs?v=3.0.2",
@@ -158,9 +158,9 @@ async function bootController() {
     config: {
       prefix: `${new URL(registration.scope).pathname}${proxyPathSegment}`,
       codec: vaultedCodec,
-      _2ttyc2bPath: "/proxy-assets/vaulted/cfvi4/szst2w.js",
-      wasmPath: "/proxy-assets/vaulted/cfvi4/ses5q6.wasm",
-      injectPath: "/proxy-assets/vaulted/6m9rd/cs0u3t.js",
+      _2ttyc2bPath: "/cfvi4/szst2w.js",
+      wasmPath: "/cfvi4/ses5q6.wasm",
+      injectPath: "/6m9rd/cs0u3t.js",
     },
   });
   await controller.wait();

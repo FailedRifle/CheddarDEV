@@ -16,7 +16,7 @@ await mkdir(output, { recursive: true });
 await rm(path.join(pagesRoot, "functions"), { recursive: true, force: true });
 await cp(path.join(root, "functions"), path.join(pagesRoot, "functions"), { recursive: true });
 
-for (const entry of ["injector.html", "robots.txt", "core", "loader", "proxy-assets"]) {
+for (const entry of ["injector.html", "robots.txt", "core", "loader", "proxy-assets", "9byt8m.js", "cfvi4", "6m9rd"]) {
   await cp(path.join(root, entry), path.join(output, entry), { recursive: true });
 }
 await cp(path.join(output, "injector.html"), path.join(output, "index.html"));
@@ -34,7 +34,7 @@ const configSource = await readFile(runtimeConfig, "utf8");
 await writeFile(runtimeConfig, configSource.replace("cloudflarePages: false", "cloudflarePages: true"));
 
 await writeFile(path.join(output, "_headers"), [
-  "/proxy-assets/vaulted/9byt8m.js",
+  "/9byt8m.js",
   "  Service-Worker-Allowed: /",
   "  Cache-Control: public, max-age=3600",
   "",
