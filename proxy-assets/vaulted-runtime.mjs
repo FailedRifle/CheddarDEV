@@ -10,14 +10,16 @@ const transportModules = {
 const validTransports = new Set(Object.keys(transportModules));
 const proxyPathSegment = "iljfw8/";
 const vaultedCodec = {
-  encode(value) {
+  // Vaulted serializes these with Function#toString into injected scripts.
+  // Use function expressions; method shorthand is not a valid expression there.
+  encode: function encode(value) {
     if (!value) return value;
     const bytes = new TextEncoder().encode(value);
     let binary = "";
     for (const byte of bytes) binary += String.fromCharCode(byte);
     return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
   },
-  decode(value) {
+  decode: function decode(value) {
     if (!value) return value;
     let encoded = value.replace(/-/g, "+").replace(/_/g, "/");
     while (encoded.length % 4) encoded += "=";
