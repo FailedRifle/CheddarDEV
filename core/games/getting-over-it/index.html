@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <base href="https://cdn.jsdelivr.net/gh/genizy/web-port@main/getting-over-it/">
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>getting over it</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background: #231F20;
+        }
+
+        #unity-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #loading-text {
+            color: white;
+            font-size: 48px;
+            font-family: cursive;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-text">LOADING...</div>
+
+    <div id="unity-container" class="unity-desktop">
+        <canvas id="unity-canvas" tabindex="-1"></canvas>
+        <div id="unity-loading-bar">
+            <div id="unity-logo"></div>
+            <div id="unity-progress-bar-empty">
+                <div id="unity-progress-bar-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loadingText = document.getElementById("loading-text");
+        let totalBytes = 691732588;
+        let loadedBytes = 0;
+
+        function formatSize(bytes) {
+            if (bytes >= 1024 ** 3) return (bytes / 1024 ** 3).toFixed(2) + " GB";
+            if (bytes >= 1024 ** 2) return (bytes / 1024 ** 2).toFixed(2) + " MB";
+            if (bytes >= 1024)      return (bytes / 1024).toFixed(2) + " KB";
+            return bytes + " B";
+        }
+
+        async function fetchWithProgress(url) {
+            const response = await fetch(url);
+            const reader = response.body.getReader();
+            const chunks = [];
+            let received = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                received += value.length;
+                loadedBytes += value.length;
+                const percent = ((loadedBytes / totalBytes) * 100).toFixed(1);
+                loadingText.textContent = `LOADING... ${formatSize(loadedBytes)} / ${formatSize(totalBytes)} (${percent}%)`;
+            }
+
+            const fullBuffer = new Uint8Array(received);
+            let offset = 0;
+            for (const chunk of chunks) {
+                fullBuffer.set(chunk, offset);
+                offset += chunk.length;
+            }
+            return fullBuffer.buffer;
+        }
+
+        async function mergeFiles(parts) {
+            const buffers = await Promise.all(parts.map(fetchWithProgress));
+            return URL.createObjectURL(new Blob(buffers));
+        }
+
+        function getParts(file, count) {
+            return Array.from({ length: count }, (_, i) => `${file}.part${i + 1}`);
+        }
+
+        (async () => {
+            const dataParts = getParts("Build/GettingOverIt.data", 32);
+            const wasmParts = getParts("Build/GettingOverIt.wasm", 2);
+
+            const [dataUrl, wasmUrl] = await Promise.all([
+                mergeFiles(dataParts),
+                mergeFiles(wasmParts)
+            ]);
+
+            const canvas = document.getElementById("unity-canvas");
+            const container = document.getElementById("unity-container");
+            const loadingBar = document.getElementById("unity-loading-bar");
+            const progressBarFull = document.getElementById("unity-progress-bar-full");
+
+            if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                const meta = document.createElement("meta");
+                meta.name = "viewport";
+                meta.content = "width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes";
+                document.head.appendChild(meta);
+                container.className = "unity-mobile";
+                canvas.className = "unity-mobile";
+            } else {
+                function resizeCanvas() {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    canvas.style.width = window.innerWidth + "px";
+                    canvas.style.height = window.innerHeight + "px";
+                }
+                window.addEventListener("resize", resizeCanvas);
+                resizeCanvas();
+            }
+
+            loadingBar.style.display = "block";
+
+            const script = document.createElement("script");
+            script.src = "Build/GettingOverIt.loader.js";
+            script.onload = () => {
+                createUnityInstance(canvas, {
+                    dataUrl,
+                    frameworkUrl: "Build/GettingOverIt.framework.js",
+                    codeUrl: wasmUrl,
+                    streamingAssetsUrl: "StreamingAssets",
+                    companyName: "Bennett Foddy",
+                    productName: "Getting Over It",
+                    productVersion: "1.7",
+                }, (progress) => {
+                    progressBarFull.style.width = (progress * 100) + "%";
+                }).then(() => {
+                    loadingBar.style.display = "none";
+                    loadingText.remove();
+                }).catch(alert);
+            };
+
+            document.body.appendChild(script);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fnaf 4</title>
+    <link rel="icon" href="data:,">
+    <base id="dynamicBase">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            color: white;
+            user-select: none;
+        }
+
+        canvas {
+            display: none;
+            height: 100vh !important;
+            width: auto !important;
+        }
+
+        #selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            width: 80%;
+        }
+
+        #game-title {
+            font-size: 2rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        #percentage { font-size: 3rem; }
+
+        #bar-container {
+            width: 100%;
+            height: 4px;
+            background: #333;
+        }
+
+        #bar {
+            height: 100%;
+            width: 0%;
+            background: white;
+            transition: width 0.1s linear;
+        }
+
+        #stage {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            letter-spacing: 0.15em;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="MMFCanvas" width="1024" height="768"></canvas>
+
+    <div id="selection">
+        <div id="game-title">Five Nights at Freddy's 4</div>
+        <div id="percentage">0%</div>
+        <div id="bar-container"><div id="bar"></div></div>
+        <div id="stage">STARTING UP...</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script>
+        const BASE = 'https://cdn.jsdelivr.net/gh/irv77/hd_fnaf/4/';
+        const parts = 20;
+        const runtimecanvas = "resources/fnaf 4.cch";
+
+        document.getElementById('dynamicBase').href = BASE;
+
+        const fakeStages = [
+            "INITIALIZING...",
+            "LOADING ASSETS...",
+            "READING MEMORY...",
+            "PREPARING SYSTEMS...",
+            "ALMOST READY...",
+        ];
+
+        let fakePercent = 0;
+        let fakeInterval = setInterval(() => {
+            if (fakePercent < 90) {
+                fakePercent += Math.random() * 2;
+                setFakeUI(fakePercent);
+            }
+        }, 200);
+
+        function setFakeUI(percent) {
+            percent = Math.min(percent, 99);
+            document.getElementById('percentage').textContent = Math.floor(percent) + '%';
+            document.getElementById('bar').style.width = percent + '%';
+            const stageIndex = Math.floor((percent / 100) * fakeStages.length);
+            document.getElementById('stage').textContent = fakeStages[Math.min(stageIndex, fakeStages.length - 1)];
+        }
+
+        function finishUI() {
+            clearInterval(fakeInterval);
+            document.getElementById('percentage').textContent = '100%';
+            document.getElementById('bar').style.width = '100%';
+            document.getElementById('stage').textContent = 'DONE';
+            setTimeout(() => {
+                document.getElementById('MMFCanvas').style.display = 'block';
+                document.getElementById('selection').style.display = 'none';
+            }, 300);
+        }
+
+        window.addEventListener("scroll", e => { window.scrollTo(0, 0); e.preventDefault(); }, false);
+        window.addEventListener("touchmove", e => { window.scrollTo(0, 0); e.preventDefault(); }, false);
+
+        // Scale mouse events to match the canvas internal resolution
+        ['mousemove', 'mousedown', 'mouseup', 'click'].forEach(type => {
+            window.addEventListener(type, e => {
+                const canvas = document.getElementById('MMFCanvas');
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                Object.defineProperty(e, 'clientX', { value: Math.round((e.clientX - rect.left) * scaleX), configurable: true });
+                Object.defineProperty(e, 'clientY', { value: Math.round((e.clientY - rect.top) * scaleY), configurable: true });
+            }, true);
+        });
+
+        const pressedKeys = {};
+        document.addEventListener('keydown', event => {
+            pressedKeys[event.key] = true;
+            if (pressedKeys['-'] && pressedKeys['=']) {
+                document.querySelector('canvas').requestFullscreen();
+                delete pressedKeys[event.key];
+            }
+        });
+        document.addEventListener('keyup', event => { delete pressedKeys[event.key]; });
+
+        const map = new Map();
+
+        async function intercept() {
+            const ogfetch = window.fetch;
+            window.fetch = async function (input, init) {
+                if (typeof input === 'string' && input.startsWith('resources/')) {
+                    const fileName = input.split('/').pop();
+                    if (map.has(fileName)) return ogfetch(map.get(fileName), init);
+                }
+                return ogfetch(input, init);
+            };
+
+            const ogopen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function (method, url) {
+                if (typeof url === 'string' && url.startsWith('resources/')) {
+                    const fileName = url.split('/').pop();
+                    if (map.has(fileName)) url = map.get(fileName);
+                }
+                return ogopen.apply(this, arguments);
+            };
+
+            for (const Tag of [HTMLImageElement, HTMLAudioElement, HTMLVideoElement]) {
+                const descriptor = Object.getOwnPropertyDescriptor(Tag.prototype, 'src');
+                if (descriptor && descriptor.set) {
+                    Object.defineProperty(Tag.prototype, 'src', {
+                        configurable: true, enumerable: true,
+                        get: descriptor.get,
+                        set: function (val) {
+                            if (typeof val === 'string' && val.startsWith('resources/')) {
+                                const fileName = val.split('/').pop();
+                                if (map.has(fileName)) val = map.get(fileName);
+                            }
+                            descriptor.set.call(this, val);
+                        }
+                    });
+                }
+            }
+        }
+
+        async function extract(zipBlob) {
+            const arrayBuffer = await zipBlob.arrayBuffer();
+            const zip = await JSZip.loadAsync(arrayBuffer);
+            const files = Object.keys(zip.files).filter(name => !zip.files[name].dir);
+            for (const fileName of files) {
+                const blob = await zip.files[fileName].async("blob");
+                map.set(fileName, URL.createObjectURL(blob));
+            }
+        }
+
+        async function wedone(mergedFileUrl) {
+            const res = await fetch(mergedFileUrl);
+            const zipBlob = await res.blob();
+            await extract(zipBlob);
+            await intercept();
+
+            const script = document.createElement('script');
+            script.src = BASE + 'src/Runtime.js';
+            script.onload = () => {
+                finishUI();
+                new Runtime("MMFCanvas", runtimecanvas);
+            };
+            document.head.appendChild(script);
+        }
+
+        function mergeFiles(fileParts) {
+            return new Promise((resolve, reject) => {
+                let buffers = [];
+
+                function fetchPart(index) {
+                    if (index >= fileParts.length) {
+                        resolve(URL.createObjectURL(new Blob(buffers)));
+                        return;
+                    }
+                    fetch(fileParts[index]).then(r => {
+                        if (!r.ok) throw new Error("Failed: " + fileParts[index]);
+                        return r.arrayBuffer();
+                    }).then(data => {
+                        buffers.push(data);
+                        fetchPart(index + 1);
+                    }).catch(err => {
+                        document.getElementById('stage').textContent = "ERROR: MISSING FILE(S)";
+                        reject(err);
+                    });
+                }
+
+                fetchPart(0);
+            });
+        }
+
+        function getParts(file, start, end) {
+            let p = [];
+            for (let i = start; i <= end; i++) p.push(file + ".part" + i);
+            return p;
+        }
+
+        mergeFiles(getParts(BASE + "src/resources.zip", 1, parts))
+            .then(url => wedone(url))
+            .catch(err => {
+                clearInterval(fakeInterval);
+                document.getElementById('stage').textContent = "FAILED TO BOOT ARCHIVE";
+                console.error(err);
+            });
+    </script>
+</body>
+</html>

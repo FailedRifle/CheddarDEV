@@ -1,0 +1,16 @@
+{
+  "credits": [
+    {
+      "role": "Lead Developer",
+      "users": ["@cheddar"]
+    },
+    {
+      "role": "Contributors",
+      "users": ["@xander"]
+    },
+    {
+      "role": "Testers and Supporters",
+      "users": ["we will put users here when were done with the account systems"]
+    }
+  ]
+}

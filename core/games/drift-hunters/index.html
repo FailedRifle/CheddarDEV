@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <title>drift hunters</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            overflow: hidden;
+        }
+
+        .webgl-content * {
+            border: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .webgl-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        #gameContainer,
+        #unityContainer,
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="webgl-content">
+        <div id="gameContainer"></div>
+    </div>
+
+    <script src="https://rawcdn.githack.com/unxa/unxa.github.io/976db99398423b4e5a8b327892c2b57b6a5b766f/g/drift-hunters/UnityLoader2019.js"></script>
+
+    <script>
+        // Instantiate the game into the gameContainer div
+        var gameInstance = UnityLoader.instantiate(
+            "gameContainer",
+            "https://rawcdn.githack.com/unxa/unxa.github.io/976db99398423b4e5a8b327892c2b57b6a5b766f/g/drift-hunters/dh.json"
+        );
+    </script>
+
+</body>
+</html>

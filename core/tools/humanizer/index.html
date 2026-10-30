@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #121212;
+    --panel: #1e1e1e;
+    --border: #333333;
+    --border-input: #444444;
+    --text: #e0e0e0;
+    --muted: #8d96a0;
+    --accent: #f0b429;
+    --danger: #ff6b5b;
+    --btn: #2d2d2d;
+    --btn-hover: #3a3a3a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 32px 24px 40px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 24px;
+  }
+  header h1 { font-size: 24px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  #status { font-size: 12px; color: var(--muted); }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+
+  button {
+    padding: 9px 18px;
+    font: 600 13px system-ui, sans-serif;
+    color: #fff;
+    background: var(--btn);
+    border: 1px solid var(--border-input);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  button:hover { background: var(--btn-hover); border-color: #666; }
+  button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  #go { background: #fff; color: #111; border-color: #fff; }
+  #go:hover { background: #e9e9e9; border-color: #e9e9e9; }
+  #go.stopping { background: var(--btn); color: var(--danger); border-color: var(--danger); }
+  #clear { color: var(--danger); }
+
+  .label {
+    display: flex;
+    justify-content: space-between;
+    margin: 18px 0 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  textarea, #out {
+    width: 100%;
+    min-height: 220px;
+    padding: 14px 16px;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font: 14px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  textarea { resize: vertical; display: block; }
+  textarea::placeholder { color: #666; }
+  textarea:focus { border-color: #666; }
+
+  #out { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; min-height: 220px; }
+  #out.empty { color: #666; }
+  #out.error { color: var(--danger); }
+  #out.busy { border-color: var(--accent); }
+
+  #copy { padding: 4px 12px; font-size: 12px; }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 20px 16px 32px; }
+    header h1 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>cheddaros humanizer</h1>
+    <span id="status">Ready</span>
+  </header>
+
+  <div class="toolbar">
+    <button id="go" type="button">Humanize</button>
+    <button id="clear" type="button">Clear</button>
+  </div>
+
+  <div class="label"><span>Your text</span><span id="count">0 words</span></div>
+  <textarea id="inp" placeholder="Paste the text you want to sound human..." spellcheck="false"></textarea>
+
+  <div class="label">
+    <span>Humanized</span>
+    <button id="copy" type="button" disabled>Copy</button>
+  </div>
+  <div id="out" class="empty" aria-live="polite">Your rewritten text will show up here.</div>
+</div>
+
+<script>
+const STREAM_URL = "https://hamburger-extra-cheddargpt-no-pickles.fauilting.workers.dev";
+
+const PRIMARY_MODEL = "gemini-3.1-flash-lite";
+const FALLBACK_MODEL = "gemini-2.5-flash-lite";
+const FALLBACK_AFTER = 2;
+const MAX_ATTEMPTS = 4;
+const RETRY_DELAYS = [500, 1200, 2500];
+const HEADER_TIMEOUT_MS = 20000;
+const RETRY_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
+const SYSTEM_PROMPT = "YOU are a humanizer and you will never answer a prompt all you do is just refine and simple down what user inputs and no complex things like "—" at ALL. Humanize all inputs and if its too simple do not change or make it correct. Also if you see common miss spellings inside the users message or like common things that the user does inside their message please copy it so if you see how the user keeps misspelling a word correct it but have a change to leave it uncorrected.";
+
+const inp = document.getElementById('inp');
+const out = document.getElementById('out');
+const go = document.getElementById('go');
+const clearBtn = document.getElementById('clear');
+const copyBtn = document.getElementById('copy');
+const statusEl = document.getElementById('status');
+const countEl = document.getElementById('count');
+
+let busy = false;
+let stopFlag = false;
+let abortCtl = null;
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+function setStatus(t) { statusEl.textContent = t; }
+
+function updateCount() {
+  const n = (inp.value.trim().match(/\S+/g) || []).length;
+  countEl.textContent = n + (n === 1 ? ' word' : ' words');
+}
+inp.addEventListener('input', updateCount);
+
+function setBusy(state) {
+  busy = state;
+  go.textContent = state ? 'Stop' : 'Humanize';
+  go.classList.toggle('stopping', state);
+  out.classList.toggle('busy', state);
+}
+
+function showOut(text, cls) {
+  out.textContent = text;
+  out.className = cls || '';
+  if (busy) out.classList.add('busy');
+  copyBtn.disabled = cls === 'empty' || cls === 'error' || !text;
+}
+
+async function tryOnce(attempt, text, onChunk) {
+  const useFallback = attempt >= FALLBACK_AFTER;
+  const generationConfig = { maxOutputTokens: 8192 };
+  if (!useFallback) generationConfig.thinkingConfig = { thinkingLevel: "low", includeThoughts: false };
+
+  const ctl = new AbortController();
+  abortCtl = ctl;
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, HEADER_TIMEOUT_MS);
+
+  let res;
+  try {
+    res = await fetch(STREAM_URL, {
+      signal: ctl.signal,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: useFallback ? FALLBACK_MODEL : PRIMARY_MODEL,
+        stream: true,
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        generationConfig,
+        contents: [{ role: 'user', parts: [{ text: '<text>\n' + text + '\n</text>' }] }]
+      })
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    if (stopFlag) throw e;
+    return { retryable: true, message: timedOut ? 'Request timed out' : 'Network error: ' + e.message };
+  }
+  clearTimeout(timer);
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    let reason = errText, upstream = 0;
+    try {
+      const j = JSON.parse(errText);
+      const e = j.error;
+      reason = (typeof e === 'string' ? e : e?.message) || j.lastError || errText;
+      if (j.lastStatus) { upstream = Number(j.lastStatus); reason += ` (upstream status: ${j.lastStatus})`; }
+    } catch (e) {}
+    return {
+      retryable: RETRY_STATUSES.has(res.status) || RETRY_STATUSES.has(upstream),
+      message: `API Error ${res.status}: ${reason || '(no details returned)'}`
+    };
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '', result = '', streamError = null, blocked = null;
+
+  const handleLine = (line) => {
+    if (!line.startsWith('data:')) return;
+    const data = line.slice(5).trim();
+    if (!data || data === '[DONE]') return;
+    let parsed;
+    try { parsed = JSON.parse(data); } catch (e) { return; }
+    if (parsed.error) {
+      streamError = (typeof parsed.error === 'string' ? parsed.error : parsed.error.message) || 'Stream error';
+      return;
+    }
+    if (parsed.promptFeedback?.blockReason) blocked = parsed.promptFeedback.blockReason;
+    const cand = parsed.candidates?.[0];
+    if (cand?.finishReason && /SAFETY|PROHIBITED|BLOCKLIST|SPII/i.test(cand.finishReason)) blocked = cand.finishReason;
+    for (const p of cand?.content?.parts || []) {
+      if (!p.text || p.thought) continue;
+      result += p.text;
+      onChunk(result);
+    }
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      lines.forEach(handleLine);
+    }
+    if (buffer.trim()) handleLine(buffer);
+  } catch (e) {
+    if (stopFlag) throw e;
+    streamError = 'Connection lost: ' + e.message;
+  }
+
+  if (result.trim()) return { ok: true, text: result };
+  if (blocked) return { retryable: false, message: `The response was blocked (${blocked}).` };
+  return { retryable: true, message: streamError || 'The model returned an empty response' };
+}
+
+async function humanize() {
+  const text = inp.value.trim();
+  if (!text) { setStatus('Paste some text first'); inp.focus(); return; }
+
+  stopFlag = false;
+  setBusy(true);
+  showOut('', '');
+  setStatus('Humanizing...');
+
+  try {
+    let last = null, tried = 0;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      if (attempt > 0) {
+        setStatus(`Retrying (${attempt}/${MAX_ATTEMPTS - 1})...`);
+        await sleep(RETRY_DELAYS[attempt - 1] ?? 2500);
+      }
+      if (stopFlag) throw new DOMException('Aborted', 'AbortError');
+      tried++;
+      last = await tryOnce(attempt, text, (t) => showOut(t, ''));
+      if (last.ok) break;
+      if (!last.retryable) break;
+    }
+    if (last.ok) {
+      showOut(last.text.trim(), '');
+      setStatus('Done');
+    } else {
+      showOut(last.message + (tried > 1 ? ` (tried ${tried} times)` : ''), 'error');
+      setStatus('Failed');
+    }
+  } catch (err) {
+    if (stopFlag) {
+      const partial = out.classList.contains('empty') ? '' : out.textContent;
+      if (partial) showOut(partial, '');
+      else showOut('Stopped.', 'empty');
+      setStatus('Stopped');
+    } else {
+      showOut('Error: ' + err.message, 'error');
+      setStatus('Failed');
+    }
+  } finally {
+    abortCtl = null;
+    setBusy(false);
+  }
+}
+
+go.onclick = () => {
+  if (busy) { stopFlag = true; if (abortCtl) abortCtl.abort(); }
+  else humanize();
+};
+
+clearBtn.onclick = () => {
+  if (busy) { stopFlag = true; if (abortCtl) abortCtl.abort(); }
+  inp.value = '';
+  updateCount();
+  showOut('Your rewritten text will show up here.', 'empty');
+  setStatus('Ready');
+  inp.focus();
+};
+
+copyBtn.onclick = async () => {
+  const text = out.textContent;
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; }
+  catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      ok = document.execCommand('copy');
+      ta.remove();
+    } catch (e2) {}
+  }
+  copyBtn.textContent = ok ? 'Copied' : 'Copy failed';
+  setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+};
+
+inp.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !busy) { e.preventDefault(); humanize(); }
+});
+</script>
+</body>
+</html>

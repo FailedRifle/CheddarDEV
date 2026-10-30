@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>cheddar clicker</title>
+    <style>
+        body, html {
+            height: 100%; margin: 0;
+            font-family: "Courier New", Courier, monospace;
+            background-color: #111; color: white;
+            overflow: hidden; user-select: none;
+        }
+
+        .game-container { display: flex; height: 100vh; }
+
+        /* --- LEFT SECTION --- */
+        .section-left {
+            flex: 1.2;
+            background: #192125 url('https://orteil.dashnet.org/cookieclicker/img/bgBlue.jpg');
+            display: flex; flex-direction: column; align-items: center;
+            border-right: 4px solid #555; padding-top: 20px;
+            position: relative; overflow: hidden;
+        }
+
+        #cookie-stats {
+            background: rgba(0, 0, 0, 0.7); width: 100%;
+            text-align: center; padding: 15px 0; margin-bottom: 40px; z-index: 10;
+        }
+
+        #cookie-count { font-size: 28px; font-weight: bold; color: #ffcc00; }
+        #cps-display { font-size: 16px; color: #aaa; }
+
+        .cookie-wrapper {
+            cursor: pointer; transition: transform 0.05s;
+            width: 280px; height: 280px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cookie-wrapper:active { transform: scale(0.95); }
+        #big-cookie { width: 100%; animation: rotateCookie 20s linear infinite; pointer-events: none; }
+
+        @keyframes rotateCookie { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* --- MIDDLE SECTION --- */
+        .section-middle {
+            flex: 2;
+            background: #222 url('https://orteil.dashnet.org/cookieclicker/img/darkNoise.png');
+            border-right: 4px solid #555;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .building-row {
+            width: 100%;
+            min-height: 80px; /* Slimmer rows */
+            border-bottom: 3px solid #444;
+            position: relative;
+            background-repeat: repeat-x;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .row-grandma { 
+            background-image: url('https://raw.githubusercontent.com/FailedRifle/cheddar-clicker/main/grandmaRow.png'); 
+            background-size: cover;
+        }
+        
+        .row-cursor { background-image: url('https://orteil.dashnet.org/cookieclicker/img/bgBlue.jpg'); opacity: 0.8; }
+        .row-farm { background-image: url('https://orteil.dashnet.org/cookieclicker/img/farm_bg.png'); }
+
+        .building-icon-container {
+            display: flex;
+            flex-wrap: nowrap; /* Keep them in a single tight line */
+            gap: -5px; /* Slight overlap for compactness */
+            padding: 5px;
+        }
+
+        .mini-building {
+            width: 40px;
+            height: 40px;
+            margin-right: -10px; /* Overlap effect */
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.7));
+            transition: transform 0.2s;
+        }
+
+        /* --- RIGHT SECTION: STORE --- */
+        .section-right { flex: 1.2; background: #333; display: flex; flex-direction: column; }
+        .store-header { background: #000; padding: 15px; text-align: center; font-size: 24px; border-bottom: 2px solid #444; }
+        #store-items { overflow-y: auto; flex-grow: 1; }
+        .shop-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; background: #444; margin: 4px; cursor: pointer;
+            border: 1px solid #222;
+        }
+        .shop-item:hover { background: #555; }
+        .item-info strong { font-size: 16px; color: #ffcc00; }
+        .free-tag { color: #00ff00; font-weight: bold; font-size: 12px; }
+
+        .floating-text {
+            position: absolute; color: white; font-size: 24px; font-weight: bold;
+            pointer-events: none; z-index: 100; animation: floatUpFade 1s forwards;
+        }
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-80px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="section-left" id="left-panel">
+        <div id="cookie-stats">
+            <div id="cookie-count">0 cookies</div>
+            <div id="cps-display">per second: 0.0</div>
+        </div>
+        <div class="cookie-wrapper" onclick="clickCookie(event)">
+            <img id="big-cookie" src="https://raw.githubusercontent.com/FailedRifle/cheddar-clicker/main/vinnycookie.png" alt="Cheddar Cookie">
+        </div>
+    </div>
+
+    <div class="section-middle" id="building-canvas"></div>
+
+    <div class="section-right">
+        <div class="store-header">Store (Free)</div>
+        <div id="store-items"></div>
+    </div>
+</div>
+
+<script>
+    let cookies = 0;
+    let cps = 0;
+    let clickPower = 1;
+
+    const shopItemsData = {
+        cursor: { name: "Cursor", baseCps: 0.1, count: 0, img: "https://orteil.dashnet.org/cookieclicker/img/cursor.png" },
+        grandma: { name: "Grandma", baseCps: 1, count: 0, img: "https://raw.githubusercontent.com/FailedRifle/cheddar-clicker/main/vinnyma.png" },
+        farm: { name: "Farm", baseCps: 8, count: 0, img: "https://orteil.dashnet.org/cookieclicker/img/farm.png" },
+        mine: { name: "Mine", baseCps: 47, count: 0, img: "https://orteil.dashnet.org/cookieclicker/img/mine.png" },
+        factory: { name: "Factory", baseCps: 260, count: 0, img: "https://orteil.dashnet.org/cookieclicker/img/factory.png" }
+    };
+
+    const MAX_VISUAL_BUILDINGS = 25; // Stop adding icons after this many
+
+    function updateDisplay() {
+        document.getElementById('cookie-count').innerText = Math.floor(cookies).toLocaleString() + " cookies";
+        document.getElementById('cps-display').innerText = "per second: " + cps.toFixed(1);
+        
+        for (const id in shopItemsData) {
+            const countElem = document.getElementById(`${id}-count`);
+            if (countElem) countElem.innerText = shopItemsData[id].count;
+        }
+    }
+
+    function clickCookie(event) {
+        cookies += clickPower;
+        createFloatingText(event.clientX, event.clientY, `+${clickPower}`);
+        updateDisplay();
+    }
+
+    function buyItem(id) {
+        const item = shopItemsData[id];
+        item.count++;
+        cps += item.baseCps;
+        
+        // Only add a visual icon if the row isn't full
+        if (item.count <= MAX_VISUAL_BUILDINGS) {
+            addBuildingToCanvas(id);
+        }
+        
+        updateDisplay();
+    }
+
+    function addBuildingToCanvas(id) {
+        const canvas = document.getElementById('building-canvas');
+        let row = document.getElementById(`row-${id}`);
+        
+        if (!row) {
+            row = document.createElement('div');
+            row.id = `row-${id}`;
+            row.className = `building-row row-${id}`;
+            row.innerHTML = `<div class="building-icon-container" id="container-${id}"></div>`;
+            canvas.appendChild(row);
+        }
+
+        const container = document.getElementById(`container-${id}`);
+        const img = document.createElement('img');
+        img.src = shopItemsData[id].img;
+        img.className = 'mini-building';
+        // Add a slight random vertical offset for that "messy" organic look
+        img.style.marginTop = (Math.random() * 10 - 5) + "px";
+        container.appendChild(img);
+    }
+
+    function createFloatingText(x, y, text) {
+        const floatingDiv = document.createElement('div');
+        floatingDiv.className = 'floating-text';
+        floatingDiv.innerText = text;
+        const leftPanel = document.getElementById('left-panel');
+        const rect = leftPanel.getBoundingClientRect();
+        floatingDiv.style.left = `${x - rect.left - 10}px`;
+        floatingDiv.style.top = `${y - rect.top - 20}px`;
+        leftPanel.appendChild(floatingDiv);
+        setTimeout(() => floatingDiv.remove(), 1000);
+    }
+
+    function initializeShop() {
+        const storeItemsDiv = document.getElementById('store-items');
+        for (const id in shopItemsData) {
+            const item = shopItemsData[id];
+            const itemHtml = `
+                <div class="shop-item" onclick="buyItem('${id}')">
+                    <div class="item-info">
+                        <strong>${item.name}</strong><br>
+                        <span class="free-tag">FREE</span>
+                    </div>
+                    <div class="item-count" id="${id}-count">0</div>
+                </div>`;
+            storeItemsDiv.insertAdjacentHTML('beforeend', itemHtml);
+        }
+    }
+
+    setInterval(() => {
+        if (cps > 0) {
+            cookies += (cps / 10);
+            updateDisplay();
+        }
+    }, 100);
+
+    initializeShop();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Raft
+
+This open-world ocean survival game strands you on a tiny square of debris with nothing more than a plastic hook in the middle of a vast, endless sea. You must snag floating debris, expand your floating home into a sprawling vessel, filter clean water, and fend off a relentless shark to survive.
+
+---
+
+### Performance & Specifications
+
+* **FPS:** Smooth rendering for open water and modular building physics.
+* **Load Time:** Moderate world generation and resource seeding.
+* **Latency:** Responsive first-person survival and hook-throwing mechanics.
+* **Multiplayer:** Supported via online co-op.

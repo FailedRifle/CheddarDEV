@@ -1,0 +1,35 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cheddar-proxy",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-10-13",
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "containers": [
+    {
+      "class_name": "ProxyContainer",
+      "scheduling_policy": "durable_object",
+      "images": {
+        "base": {
+          "dockerfile": "./Dockerfile"
+        }
+      }
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PROXY_CONTAINER",
+        "class_name": "ProxyContainer"
+      }
+    ]
+  },
+  "exports": {
+    "ProxyContainer": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  }
+}

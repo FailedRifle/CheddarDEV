@@ -1,0 +1,380 @@
+[
+  {
+    "url": "/core/games/bowmasters/index.html",
+    "proxy": false,
+    "src": "bowmasters",
+    "pretty": "Bowmasters",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/retro-bowl/index.html",
+    "proxy": false,
+    "src": "retro-bowl",
+    "pretty": "Retro Bowl",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/backrooms/index.html",
+    "proxy": false,
+    "src": "backrooms",
+    "pretty": "Backrooms",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/cookie-clicker/index.html",
+    "proxy": false,
+    "src": "cookie-clicker",
+    "pretty": "Cookie Clicker",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/granny/index.html",
+    "proxy": false,
+    "src": "granny",
+    "pretty": "Granny",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/highway-racer-2/index.html",
+    "proxy": false,
+    "src": "highway-racer-2",
+    "pretty": "Highway Racer 2",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/moto-x3m/index.html",
+    "proxy": false,
+    "src": "moto-x3m",
+    "pretty": "Moto X3M",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/tiny-fishing/index.html",
+    "proxy": false,
+    "src": "tiny-fishing",
+    "pretty": "Tiny Fishing",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/flappy-bird/index.html",
+    "proxy": false,
+    "src": "flappy-bird",
+    "pretty": "Flappy Bird",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/flappy-dunk/index.html",
+    "proxy": false,
+    "src": "flappy-dunk",
+    "pretty": "Flappy Dunk",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/drift-hunters/index.html",
+    "proxy": false,
+    "src": "drift-hunters",
+    "pretty": "Drift Hunters",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/people-playground/index.html",
+    "proxy": false,
+    "src": "people-playground",
+    "pretty": "People Playground",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/buckshot-roulette/index.html",
+    "proxy": false,
+    "src": "buckshot-roulette",
+    "pretty": "Buckshot Roulette",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/plants-vs-zombies/index.html",
+    "proxy": false,
+    "src": "plants-vs-zombies",
+    "pretty": "Plants vs Zombies",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/escape-road/index.html",
+    "proxy": false,
+    "src": "escape-road",
+    "pretty": "Escape Road",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/raft-wars-2/index.html",
+    "proxy": false,
+    "src": "raft-wars-2",
+    "pretty": "Raft Wars 2",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/they-are-coming/index.html",
+    "proxy": false,
+    "src": "they-are-coming",
+    "pretty": "They Are Coming",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/idle-breakout/index.html",
+    "proxy": false,
+    "src": "idle-breakout",
+    "pretty": "Idle Breakout",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/raft/index.html",
+    "proxy": false,
+    "src": "raft",
+    "pretty": "Raft",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/clash-of-vikings/index.html",
+    "proxy": false,
+    "src": "clash-of-vikings",
+    "pretty": "Clash Of Vikings",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/postal/index.html",
+    "proxy": false,
+    "src": "postal",
+    "pretty": "Postal",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/adventure-capitalist/index.html",
+    "proxy": true,
+    "src": "adventure-capitalist",
+    "pretty": "Adventure Capitalist",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/crossy-roads/index.html",
+    "proxy": true,
+    "src": "crossy-roads",
+    "pretty": "Crossy Roads",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/fnaf2/index.html",
+    "proxy": true,
+    "src": "fnaf2",
+    "pretty": "FNAF2",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/fnaf3/index.html",
+    "proxy": true,
+    "src": "fnaf3",
+    "pretty": "FNAF3",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/fnaf4/index.html",
+    "proxy": true,
+    "src": "fnaf4",
+    "pretty": "FNAF4",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/minecraft/index.html",
+    "proxy": true,
+    "src": "minecraft",
+    "pretty": "Minecraft",
+    "enabled": true
+  },
+  {
+    "url": "/core/games/orange-roulette/index.html",
+    "proxy": true,
+    "src": "orange-roulette",
+    "pretty": "Orange Roulette",
+    "enabled": false
+  },
+  {
+    "url": "/core/games/moto-x3m-poolparty/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "moto-x3m-poolparty",
+    "pretty": "Moto X3M PoolParty"
+  },
+  {
+    "url": "/core/games/nitro-type/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "nitro-type",
+    "pretty": "Nitro Type"
+  },
+  {
+    "url": "/core/games/flying-gorilla/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "flying-gorilla",
+    "pretty": "Flying Gorilla"
+  },
+  {
+    "url": "/core/games/peak/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "peak",
+    "pretty": "PEAK"
+  },
+  {
+    "url": "/core/games/clustertruck/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "clustertruck",
+    "pretty": "ClusterTruck"
+  },
+  {
+    "url": "/core/games/60-seconds/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "60-seconds",
+    "pretty": "60 Seconds!"
+  },
+  {
+    "url": "/core/games/throw-a-potato/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "throw-a-potato",
+    "pretty": "Throw a Potato"
+  },
+  {
+    "url": "/core/games/cheddar-clicker/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "cheddar-clicker",
+    "pretty": "Cheddar Clicker"
+  },
+  {
+    "url": "/core/games/getting-over-it/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "getting-over-it",
+    "pretty": "Getting Over It"
+  },
+  {
+    "url": "/core/games/baldis-basic/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "baldis-basic",
+    "pretty": "Baldi's Basics"
+  },
+  {
+    "url": "/core/games/bloons-td4/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "bloons-td4",
+    "pretty": "Bloons TD 4"
+  },
+  {
+    "url": "/core/games/bloons-td5/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "bloons-td5",
+    "pretty": "Bloons TD 5"
+  },
+  {
+    "url": "/core/games/brawl-stars/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "brawl-stars",
+    "pretty": "Brawl Simulator 3D"
+  },
+  {
+    "url": "/core/games/cheeserolling/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "cheeserolling",
+    "pretty": "Cheese Rolling"
+  },
+  {
+    "url": "/core/games/fnac/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "fnac",
+    "pretty": "FNAC"
+  },
+  {
+    "url": "/core/games/fnae/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "fnae",
+    "pretty": "FNAE"
+  },
+  {
+    "url": "/core/games/fnaf1/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "fnaf1",
+    "pretty": "FNAF 1"
+  },
+  {
+    "url": "/core/games/geometry-dash/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "geometry-dash",
+    "pretty": "Geometry Dash Lite"
+  },
+  {
+    "url": "/core/games/gta-3/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "gta-3",
+    "pretty": "Grand Theft Auto III"
+  },
+  {
+    "url": "/core/games/gta-vc/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "gta-vc",
+    "pretty": "Grand Theft Auto: Vice City"
+  },
+  {
+    "url": "/core/games/learn-to-fly3/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "learn-to-fly3",
+    "pretty": "Learn to Fly 3"
+  },
+  {
+    "url": "/core/games/nz-zombies/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "nz-zombies",
+    "pretty": "Nazi Zombies"
+  },
+  {
+    "url": "/core/games/sm64/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "sm64",
+    "pretty": "Super Mario 64"
+  },
+  {
+    "url": "/core/games/snow-rider3d/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "snow-rider3d",
+    "pretty": "Snow Rider 3D"
+  },
+    {
+    "url": "/core/games/ultrakill/index.html",
+    "proxy": false,
+    "enabled": true,
+    "src": "ultrakill",
+    "pretty": "ULTRAKILL"
+  },
+    {
+    "url": "/core/games/retro-bowl-college/index.html",
+    "proxy": false,
+    "enabled": false,
+    "src": "retro-bowl-college",
+    "pretty": "Retro Bowl College"
+  }
+]

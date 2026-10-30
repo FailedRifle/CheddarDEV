@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>injector</title>
+    <link id="manifest-link" rel="manifest" href="">
+    <link id="app-window-favicon" rel="icon" href="loader/favicon.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background-color: #000000;
+            color: #555555;
+            font-family: 'Roboto Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 14px;
+            font-weight: 300;
+            gap: 15px;
+        }
+        #install-btn {
+            background: transparent;
+            border: 1px solid #555555;
+            color: #888888;
+            font-family: 'Roboto Mono', monospace;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: none;
+        }
+        #install-btn:hover {
+            border-color: #888888;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Please install the app to continue using &#x43;&#x68;&#x65;&#x64;&#x64;&#x61;&#x72;&#x4f;&#x53;</div>
+    <button id="install-btn">Install</button>
+
+    <script>
+        const installable = true;
+        const SIGN_IN_MODE = false;
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        let deferredPrompt;
+
+        if (installable) {
+            document.getElementById('manifest-link').href = 'loader/manifest.json';
+        }
+
+        function openCheddarBrowserTab() {
+            try {
+                if (window.parent === window || typeof window.parent.cheddarOpenBrowserTab !== 'function') return false;
+                window.parent.cheddarOpenBrowserTab();
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        if (isPWA && installable && SIGN_IN_MODE && !localStorage.getItem('cheddaros-session')) {
+            const signInPopup = window.open('about:blank#sign-in', '_blank', 'popup=yes,width=520,height=720,resizable=yes,scrollbars=yes');
+            if (signInPopup) {
+                const signInUrl = new URL('core/signin.html', window.location.href).href;
+                signInPopup.document.open();
+                signInPopup.document.write(`<!doctype html><html><head><meta charset="UTF-8"><title>Sign In</title><style>html,body,iframe{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#121212}iframe{display:block;border:0}</style></head><body><iframe src="${signInUrl}" title="Sign In"></iframe></body></html>`);
+                signInPopup.document.close();
+            } else {
+                window.__cheddarAllowClose = true;
+                window.location.replace(new URL('core/signin.html', window.location.href).href);
+            }
+        } else if (isPWA && installable) {
+            const browserUrl = new URL('core/browser.html', window.location.href).href;
+            const supportUrl = 'https://www.profitableratecpmnetwork.com/wbdmk5ub7?key=c4e050a0b83e3bd62cd2f566b0f5d951';
+
+            const launchMode = localStorage.getItem('cheddar-app-launch-mode') || 'window';
+
+            if (launchMode === 'normal-tab') {
+                window.__cheddarAllowClose = true;
+                window.location.replace(browserUrl);
+            } else if (launchMode === 'chrome-tab') {
+                window.__cheddarAllowClose = true;
+                window.location.replace(browserUrl);
+            } else if (launchMode === 'cheddar-tab' && openCheddarBrowserTab()) {
+                document.body.textContent = '\u0043\u0068\u0065\u0064\u0064\u0061\u0072\u004f\u0053 opened in a browser tab.';
+            } else if (launchMode === 'cheddar-tab') {
+                window.__cheddarAllowClose = true;
+                window.location.replace(browserUrl);
+            } else {
+                const newWindow = window.open('about:blank#go-cheddarian', '_blank', 'width=800,height=600,toolbar=no,menubar=no,scrollbars=yes,resizable=yes'); // change about:blank#<keyword> if the keyword is blocked
+
+                if (newWindow) {
+                    const doc = newWindow.document;
+                    const cloaks = {
+                        default: ['\u0043\u0068\u0065\u0064\u0064\u0061\u0072\u004f\u0053', 'loader/favicon.png', 'image/png'],
+                        classroom: ['Google Classroom', 'core/images/cloakicons/classroom.ico', 'image/x-icon'],
+                        docs: ['Google Docs', 'core/images/cloakicons/docs.ico', 'image/x-icon'],
+                        drive: ['Google Drive', 'core/images/cloakicons/drive.ico', 'image/x-icon'],
+                        genesis: ['Genesis', 'core/images/cloakicons/genesis.ico', 'image/x-icon'],
+                        gmail: ['Gmail', 'core/images/cloakicons/gmail.ico', 'image/x-icon'],
+                        slides: ['Google Slides', 'core/images/cloakicons/slides.ico', 'image/x-icon'],
+                    };
+                    const preset = cloaks[localStorage.getItem('cheddar-app-cloak')] || cloaks.default;
+                    const iconUrl = new URL(preset[1], window.location.href).href;
+                    doc.open();
+                    doc.write(`<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>${preset[0]}</title><link id="app-window-favicon" rel="icon" href="${iconUrl}" type="${preset[2]}"><style>html,body,iframe{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000}iframe{display:block;border:0}</style><script>window.open = function(url){window.location.href = url; return null;};window.addEventListener('beforeunload', function(e){e.preventDefault();e.returnValue='';});<\/script></head><body><iframe src="${browserUrl}" title="${preset[0]}"></iframe></body></html>`);
+                    doc.close();
+                    window.__cheddarAllowClose = true;
+                    window.close();
+                } else {
+                    window.__cheddarAllowClose = true;
+                    window.location.replace(browserUrl);
+                }
+            }
+        } else if (installable) {
+            const btn = document.getElementById('install-btn');
+            
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                btn.style.display = 'block';
+            });
+
+            btn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice;
+                    deferredPrompt = null;
+                }
+            });
+        } else {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        if ('serviceWorker' in navigator && installable) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('loader/service-worker.js', { scope: './' }).catch(() => {});
+            });
+        }
+
+        window.open = function(url) {
+            window.location.href = url;
+            return null;
+        };
+    </script>
+</body>
+</html>

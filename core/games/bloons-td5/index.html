@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>bloons td5</title>
+    <style>
+        *, html, body {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        object, embed {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/gh/u-cvlassrom-y/google@main/ruffle.js"></script>
+    <div class="game-container">
+        <object data="https://cdn.jsdelivr.net/gh/genizy/assets@main/btd5/btd5.swf"
+                type="application/x-shockwave-flash"
+                width="100%" height="100%">
+            <param name="movie" value="https://cdn.jsdelivr.net/gh/genizy/assets@main/btd5/btd5.swf" />
+            <param name="allowFullScreen" value="true" />
+            <param name="allowScriptAccess" value="always" />
+            <embed src="https://cdn.jsdelivr.net/gh/genizy/assets@main/btd5/btd5.swf"
+                   type="application/x-shockwave-flash"
+                   width="100%" height="100%"
+                   allowfullscreen="true">
+        </object>
+    </div>
+</body>
+</html>

@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+      background-color: #121212;
+      color: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid #333;
+      margin-bottom: 24px;
+      padding-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin: 0;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    #header-status {
+      font-family: monospace;
+      font-size: 12px;
+      color: #4caf50;
+      text-transform: uppercase;
+      display: none;
+    }
+
+    .card {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    p.description {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #aaa;
+      line-height: 1.5;
+    }
+
+    .row { margin-top: 16px; }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      font-family: monospace;
+      font-size: 13px;
+      padding: 10px 12px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background-color: #1e1e1e;
+      color: #ffffff;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: #666;
+    }
+
+    button {
+      padding: 8px 16px;
+      cursor: pointer;
+      background-color: #333;
+      border: 1px solid #444;
+      border-radius: 4px;
+      font-weight: 500;
+      color: #fff;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button:hover {
+      background-color: #444;
+      border-color: #555;
+    }
+
+    .primary-btn {
+      background-color: #ffffff;
+      color: #000;
+      border: none;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .primary-btn:hover { 
+      background-color: #cccccc; 
+    }
+
+    .primary-btn:disabled {
+      background-color: #555555;
+      color: #888888;
+      cursor: not-allowed;
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    /* Explorer Section Styling */
+    .explorer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #333;
+      margin-bottom: 16px;
+    }
+
+    .breadcrumbs {
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-family: monospace;
+    }
+
+    .breadcrumb-item {
+      color: #58a6ff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .breadcrumb-item:hover { text-decoration: underline; }
+    .breadcrumb-separator { color: #666; font-weight: normal; }
+
+    .file-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      font-family: monospace;
+    }
+
+    .file-table th, .file-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .file-table th {
+      background-color: #121212;
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    .file-row:hover {
+      background-color: #222222;
+    }
+
+    /* GitHub Muted Grey Style for Files */
+    .item-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: #8d96a0; /* GitHub dark mode file grey */
+      transition: color 0.15s ease;
+    }
+
+    .item-name:hover {
+      color: #58a6ff; /* GitHub accent blue on hover */
+      text-decoration: underline;
+    }
+
+    .item-name.folder { 
+      color: #e6edf3; /* Brighter white/grey for folder titles */
+    }
+
+    .item-name.folder:hover {
+      color: #58a6ff;
+    }
+
+    .octicon {
+      fill: currentColor;
+      display: inline-block;
+      vertical-align: text-bottom;
+      flex-shrink: 0;
+    }
+
+    .status-msg {
+      margin-top: 12px;
+      font-size: 13px;
+      font-family: monospace;
+    }
+
+    .status-msg.error { color: #ff5252; }
+    .status-msg.success { color: #4caf50; }
+    .status-msg.info { color: #58a6ff; }
+
+    .live-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background-color: #4caf50;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .hidden { display: none !important; }
+
+    .preview-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 20px;
+      box-sizing: border-box;
+    }
+
+    .preview-box {
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #333;
+      background: #121212;
+      flex-shrink: 0;
+    }
+
+    .preview-filename {
+      font-family: monospace;
+      font-size: 13px;
+      color: #e6edf3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .preview-body {
+      overflow: auto;
+      padding: 16px;
+      flex: 1;
+    }
+
+    .preview-body pre {
+      margin: 0;
+      border-radius: 4px;
+    }
+
+    .preview-body pre code.hljs {
+      display: block;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 14px;
+      border-radius: 4px;
+      background: #0d1117 !important;
+    }
+
+    .preview-body img {
+      max-width: 100%;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .preview-msg {
+      font-family: monospace;
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      padding: 40px 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>cheddarOS asset stealer</h1>
+      <div id="header-status">
+        <span class="live-dot"></span> <span id="repo-label">loaded</span>
+      </div>
+    </header>
+
+    <div class="card">
+      <p class="description">
+        Paste a public GitHub link or subfolder URL to explore files and download directly.
+      </p>
+      
+      <div class="input-group">
+        <input 
+          type="text" 
+          id="repoUrl" 
+          placeholder="https://github.com/cheddar/cheddarOS/tree/main"
+        />
+        <button class="primary-btn" id="loadBtn" onclick="loadRepository()">load repo</button>
+      </div>
+
+      <div id="status" class="status-msg"></div>
+    </div>
+
+    <div class="card hidden" id="explorerCard">
+      <div class="explorer-header">
+        <div class="breadcrumbs" id="breadcrumbs"></div>
+        <button class="btn-sm" onclick="downloadCurrentFolderZip()">
+          <span id="downloadBtnIcon"></span> download folder (.zip)
+        </button>
+      </div>
+
+      <div class="row" style="margin-top: 0; margin-bottom: 16px;">
+        <input 
+          type="text" 
+          id="filterInput" 
+          placeholder="Filter files across repository..." 
+          oninput="renderView()"
+        />
+      </div>
+
+      <table class="file-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th style="width: 100px;">Size</th>
+            <th style="width: 110px; text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="fileList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="previewOverlay" class="preview-overlay hidden">
+    <div class="preview-box">
+      <div class="preview-header">
+        <span class="preview-filename" id="previewFilename"></span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="btn-sm" id="previewDownloadBtn">download</button>
+          <button class="btn-sm" onclick="closePreview()">close</button>
+        </div>
+      </div>
+      <div class="preview-body" id="previewBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const ICONS = {
+      folder: `<svg class="octicon" viewBox="0 0 16 16" width="16" height="16" style="fill: #7d8590;"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"></path></svg>`,
+      file: `<svg class="octicon" viewBox="0 0 16 16" width="16" height="16" style="fill: #7d8590;"><path d="M2 1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v8.086A1.75 1.75 0 0 1 12.75 15H3.75A1.75 1.75 0 0 1 2 13.25Zm1.75-.25a.25.25 0 0 0-.25.25v11.5c0 .138.112.25.25.25h9a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 8.5 4.25V1.5Zm6 0v2.75c0 .138.112.25.25.25h2.75L9.5 1.5Z"></path></svg>`,
+      download: `<svg class="octicon" viewBox="0 0 16 16" width="16" height="16" style="fill: #ffffff;"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"></path><path d="M7.25 7.689V1.75a.75.75 0 0 1 1.5 0v5.939l1.72-1.72a.749.749 0 1 1 1.06 1.06l-3 3a.749.749 0 0 1-1.06 0l-3-3a.749.749 0 1 1 1.06-1.06l1.72 1.72Z"></path></svg>`,
+      repo: `<svg class="octicon" viewBox="0 0 16 16" width="16" height="16" style="fill: #58a6ff;"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-1 1v.878A2.25 2.25 0 0 1 2 13.5v-11Zm2.5-1a1 1 0 0 0-1 1v9.066a3.738 3.738 0 0 1 1-.066h8v-10h-8.25Z"></path></svg>`,
+      arrowLeft: `<svg class="octicon" viewBox="0 0 16 16" width="16" height="16" style="fill: #58a6ff;"><path d="M9.78 12.78a.75.75 0 0 1-1.06 0L4.47 8.53a.75.75 0 0 1 0-1.06l4.25-4.25a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042L6.06 8l3.72 3.72a.75.75 0 0 1 0 1.06Z"></path></svg>`
+    };
+
+    document.getElementById('downloadBtnIcon').innerHTML = ICONS.download;
+
+    let repoInfo = { owner: '', repo: '', branch: '' };
+    let globalTree = [];
+    let currentPath = '';
+
+    async function loadRepository() {
+      const inputUrl = document.getElementById('repoUrl').value.trim();
+      const status = document.getElementById('status');
+      const loadBtn = document.getElementById('loadBtn');
+      const explorerCard = document.getElementById('explorerCard');
+      const headerStatus = document.getElementById('header-status');
+
+      status.textContent = '';
+      status.className = 'status-msg';
+
+      if (!inputUrl) {
+        showStatus('ERROR: Please enter a GitHub repository URL.', 'error');
+        return;
+      }
+
+      const parsed = parseUrl(inputUrl);
+      if (!parsed) {
+        showStatus('ERROR: Invalid GitHub URL format.', 'error');
+        return;
+      }
+
+      repoInfo = parsed;
+      loadBtn.disabled = true;
+      showStatus('FETCHING METADATA VIA GITHUB API...', 'info');
+
+      try {
+        if (!repoInfo.branch) {
+          const repoRes = await fetch(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}`);
+          if (!repoRes.ok) throw new Error('Repository not found or private.');
+          const repoData = await repoRes.json();
+          repoInfo.branch = repoData.default_branch;
+        }
+
+        const treeRes = await fetch(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/git/trees/${repoInfo.branch}?recursive=1`);
+        if (!treeRes.ok) throw new Error('Failed to retrieve file tree (API rate limit exceeded).');
+        const treeData = await treeRes.json();
+
+        globalTree = treeData.tree || [];
+        currentPath = parsed.initialPath || '';
+
+        showStatus('', '');
+        explorerCard.classList.remove('hidden');
+        headerStatus.style.display = 'block';
+        document.getElementById('repo-label').textContent = `${repoInfo.owner}/${repoInfo.repo}`;
+
+        renderView();
+      } catch (err) {
+        showStatus(`ERROR: ${err.message}`, 'error');
+        explorerCard.classList.add('hidden');
+        headerStatus.style.display = 'none';
+      } finally {
+        loadBtn.disabled = false;
+      }
+    }
+
+    function parseUrl(url) {
+      try {
+        const parsed = new URL(url);
+        const parts = parsed.pathname.split('/').filter(Boolean);
+
+        if (parts.length < 2) return null;
+
+        const owner = parts[0];
+        const repo = parts[1];
+        let branch = '';
+        let initialPath = '';
+
+        if (parts[2] === 'tree' || parts[2] === 'blob') {
+          branch = parts[3];
+          initialPath = parts.slice(4).join('/');
+        }
+
+        return { owner, repo, branch, initialPath };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function renderView() {
+      renderBreadcrumbs();
+
+      const filterText = document.getElementById('filterInput').value.toLowerCase().trim();
+      const fileListEl = document.getElementById('fileList');
+      fileListEl.innerHTML = '';
+
+      if (filterText) {
+        const matches = globalTree.filter(item => 
+          item.type === 'blob' && item.path.toLowerCase().includes(filterText)
+        );
+
+        if (matches.length === 0) {
+          fileListEl.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#666;">No matching files found</td></tr>`;
+          return;
+        }
+
+        matches.forEach(item => {
+          const row = document.createElement('tr');
+          row.className = 'file-row';
+          row.innerHTML = `
+            <td>
+              <span class="item-name" onclick="openPreview('${escapeHtml(item.path)}')">
+                ${ICONS.file} ${escapeHtml(item.path)}
+              </span>
+            </td>
+            <td>${formatBytes(item.size || 0)}</td>
+            <td style="text-align: right;">
+              <button class="btn-sm" onclick="openPreview('${escapeHtml(item.path)}')">view</button>
+              <button class="btn-sm" onclick="downloadSingleFile('${item.path}')">get</button>
+            </td>
+          `;
+          fileListEl.appendChild(row);
+        });
+        return;
+      }
+
+      const prefix = currentPath ? currentPath + '/' : '';
+      const folderMap = new Set();
+      const directFiles = [];
+
+      globalTree.forEach(item => {
+        if (currentPath && !item.path.startsWith(prefix)) return;
+        
+        const relative = currentPath ? item.path.slice(prefix.length) : item.path;
+        if (!relative) return;
+
+        const parts = relative.split('/');
+
+        if (parts.length === 1) {
+          if (item.type === 'blob') {
+            directFiles.push({ name: parts[0], path: item.path, size: item.size });
+          } else if (item.type === 'tree') {
+            folderMap.add(parts[0]);
+          }
+        } else {
+          folderMap.add(parts[0]);
+        }
+      });
+
+      if (currentPath) {
+        const parentRow = document.createElement('tr');
+        parentRow.className = 'file-row';
+        parentRow.innerHTML = `
+          <td colspan="3">
+            <span class="item-name folder" onclick="navigateUp()">
+              ${ICONS.arrowLeft} ..
+            </span>
+          </td>
+        `;
+        fileListEl.appendChild(parentRow);
+      }
+
+      Array.from(folderMap).sort().forEach(folderName => {
+        const folderPath = prefix + folderName;
+        const row = document.createElement('tr');
+        row.className = 'file-row';
+        row.innerHTML = `
+          <td>
+            <span class="item-name folder" onclick="navigateTo('${escapeHtml(folderPath)}')">
+              ${ICONS.folder} ${escapeHtml(folderName)}
+            </span>
+          </td>
+          <td>--</td>
+          <td style="text-align: right;">
+            <button class="btn-sm" onclick="downloadFolderZip('${escapeHtml(folderPath)}', '${escapeHtml(folderName)}')">.zip</button>
+          </td>
+        `;
+        fileListEl.appendChild(row);
+      });
+
+      directFiles.sort((a, b) => a.name.localeCompare(b.name)).forEach(file => {
+        const row = document.createElement('tr');
+        row.className = 'file-row';
+        row.innerHTML = `
+          <td>
+            <span class="item-name" onclick="openPreview('${escapeHtml(file.path)}')">
+              ${ICONS.file} ${escapeHtml(file.name)}
+            </span>
+          </td>
+          <td>${formatBytes(file.size || 0)}</td>
+          <td style="text-align: right;">
+            <button class="btn-sm" onclick="openPreview('${escapeHtml(file.path)}')">view</button>
+            <button class="btn-sm" onclick="downloadSingleFile('${escapeHtml(file.path)}')">get</button>
+          </td>
+        `;
+        fileListEl.appendChild(row);
+      });
+
+      if (folderMap.size === 0 && directFiles.length === 0) {
+        fileListEl.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#666;">Directory empty</td></tr>`;
+      }
+    }
+
+    function renderBreadcrumbs() {
+      const breadcrumbsEl = document.getElementById('breadcrumbs');
+      breadcrumbsEl.innerHTML = '';
+
+      const rootLink = document.createElement('span');
+      rootLink.className = 'breadcrumb-item';
+      rootLink.innerHTML = `${ICONS.repo} ${repoInfo.repo || 'root'}`;
+      rootLink.onclick = () => navigateTo('');
+      breadcrumbsEl.appendChild(rootLink);
+
+      if (!currentPath) return;
+
+      const parts = currentPath.split('/');
+      let accumulatedPath = '';
+
+      parts.forEach(part => {
+        accumulatedPath += (accumulatedPath ? '/' : '') + part;
+        const currentAcc = accumulatedPath;
+
+        const sep = document.createElement('span');
+        sep.className = 'breadcrumb-separator';
+        sep.textContent = ' / ';
+        breadcrumbsEl.appendChild(sep);
+
+        const link = document.createElement('span');
+        link.className = 'breadcrumb-item';
+        link.textContent = part;
+        link.onclick = () => navigateTo(currentAcc);
+        breadcrumbsEl.appendChild(link);
+      });
+    }
+
+    function navigateTo(path) {
+      currentPath = path;
+      document.getElementById('filterInput').value = '';
+      renderView();
+    }
+
+    function navigateUp() {
+      if (!currentPath) return;
+      const parts = currentPath.split('/');
+      parts.pop();
+      navigateTo(parts.join('/'));
+    }
+
+    async function downloadSingleFile(filePath) {
+      const rawUrl = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${repoInfo.branch}/${filePath}`;
+      const fileName = filePath.split('/').pop();
+
+      showStatus(`DOWNLOADING ${fileName}...`, 'info');
+
+      try {
+        const res = await fetch(rawUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+
+        triggerDownload(blob, fileName);
+        showStatus(`DOWNLOADED "${fileName}"`, 'success');
+      } catch (err) {
+        showStatus(`ERROR: ${err.message}`, 'error');
+      }
+    }
+
+    function downloadCurrentFolderZip() {
+      const folderName = currentPath ? currentPath.split('/').pop() : repoInfo.repo;
+      downloadFolderZip(currentPath, folderName);
+    }
+
+    async function downloadFolderZip(folderPath, folderName) {
+      const prefix = folderPath ? folderPath + '/' : '';
+      const filesToDownload = globalTree.filter(item => 
+        item.type === 'blob' && (folderPath === '' || item.path.startsWith(prefix))
+      );
+
+      if (filesToDownload.length === 0) {
+        showStatus('ERROR: No files found in this folder.', 'error');
+        return;
+      }
+
+      const zip = new JSZip();
+      let completed = 0;
+
+      for (const file of filesToDownload) {
+        completed++;
+        showStatus(`FETCHING FILE ${completed} OF ${filesToDownload.length}...`, 'info');
+
+        const rawUrl = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${repoInfo.branch}/${file.path}`;
+        
+        try {
+          const res = await fetch(rawUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            const zipPath = folderPath ? file.path.slice(prefix.length) : file.path;
+            zip.file(zipPath, blob);
+          }
+        } catch (e) {
+          console.error(`Failed to pack ${file.path}`, e);
+        }
+      }
+
+      showStatus('BUILDING ZIP ARCHIVE...', 'info');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipFilename = `${folderName}.zip`;
+
+      triggerDownload(zipBlob, zipFilename);
+      showStatus(`DOWNLOADED "${zipFilename}"`, 'success');
+    }
+
+    const LANG_MAP = {
+      txt: 'plaintext', md: 'markdown', js: 'javascript', ts: 'typescript',
+      jsx: 'javascript', tsx: 'typescript', json: 'json', html: 'xml', htm: 'xml',
+      css: 'css', scss: 'scss', less: 'less', xml: 'xml', yaml: 'yaml', yml: 'yaml',
+      csv: 'plaintext', py: 'python', rb: 'ruby', php: 'php', java: 'java',
+      c: 'c', cpp: 'cpp', h: 'c', hpp: 'cpp', cs: 'csharp', go: 'go', rs: 'rust',
+      sh: 'bash', bash: 'bash', sql: 'sql', lua: 'lua', ini: 'ini', cfg: 'ini',
+      conf: 'ini', env: 'ini', gitignore: 'plaintext', svg: 'xml', log: 'plaintext'
+    };
+    const TEXT_EXTENSIONS = Object.keys(LANG_MAP);
+    const IMAGE_EXTENSIONS = ['png','jpg','jpeg','gif','webp','bmp','ico'];
+
+    function getExt(path) {
+      const parts = path.split('.');
+      return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    }
+
+    async function openPreview(filePath) {
+      const overlay = document.getElementById('previewOverlay');
+      const filenameEl = document.getElementById('previewFilename');
+      const bodyEl = document.getElementById('previewBody');
+      const downloadBtn = document.getElementById('previewDownloadBtn');
+
+      const fileName = filePath.split('/').pop();
+      const ext = getExt(fileName);
+      const rawUrl = `https://raw.githubusercontent.com/${repoInfo.owner}/${repoInfo.repo}/${repoInfo.branch}/${filePath}`;
+
+      filenameEl.textContent = filePath;
+      downloadBtn.onclick = () => downloadSingleFile(filePath);
+      bodyEl.innerHTML = `<div class="preview-msg">LOADING...</div>`;
+      overlay.classList.remove('hidden');
+
+      if (IMAGE_EXTENSIONS.includes(ext)) {
+        bodyEl.innerHTML = `<img src="${rawUrl}" alt="${escapeHtml(fileName)}" onerror="this.parentElement.innerHTML='<div class=&quot;preview-msg&quot;>Failed to load image.</div>'">`;
+        return;
+      }
+
+      if (!TEXT_EXTENSIONS.includes(ext)) {
+        bodyEl.innerHTML = `<div class="preview-msg">No preview available for this file type.<br>Use the download button above to save it.</div>`;
+        return;
+      }
+
+      try {
+        const res = await fetch(rawUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+
+        if (text.length > 500000) {
+          bodyEl.innerHTML = `<div class="preview-msg">File too large to preview (${formatBytes(text.length)}).<br>Use the download button above to save it.</div>`;
+          return;
+        }
+
+        const lang = LANG_MAP[ext] || 'plaintext';
+        const codeEl = document.createElement('code');
+        codeEl.className = `hljs language-${lang}`;
+        codeEl.textContent = text;
+
+        const preEl = document.createElement('pre');
+        preEl.appendChild(codeEl);
+
+        bodyEl.innerHTML = '';
+        bodyEl.appendChild(preEl);
+
+        if (window.hljs) {
+          hljs.highlightElement(codeEl);
+        }
+      } catch (err) {
+        bodyEl.innerHTML = `<div class="preview-msg" style="color:#ff5252;">ERROR: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function closePreview() {
+      document.getElementById('previewOverlay').classList.add('hidden');
+      document.getElementById('previewBody').innerHTML = '';
+    }
+
+    document.getElementById('previewOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'previewOverlay') closePreview();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closePreview();
+    });
+
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function showStatus(text, type) {
+      const status = document.getElementById('status');
+      status.textContent = text;
+      status.className = `status-msg ${type}`;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      })[m]);
+    }
+  </script>
+</body>
+</html>

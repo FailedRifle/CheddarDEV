@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #121212;
+    --sidebar-bg: #0f0f0f;
+    --panel-bg: #1a1a1a;
+    --card-bg: #1e1e1e;
+    --border: #333333;
+    --border-hover: #555555;
+    --text: #e0e0e0;
+    --text-dim: #999999;
+    --text-muted: #676767;
+    --accent: #ffffff;
+    --yellow: #ffd700;
+    --red: #ff5252;
+    --header-h: 56px;
+    --sidebar-w: 220px;
+    --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0c0c0c; }
+  #app {
+    width: 100%; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: var(--font); display: flex; flex-direction: column; overflow: hidden;
+  }
+  #header {
+    display: flex; align-items: center;
+    height: var(--header-h); min-height: var(--header-h);
+    border-bottom: 2px solid var(--border);
+    background: var(--sidebar-bg); flex-shrink: 0;
+  }
+  #logo {
+    width: var(--sidebar-w); min-width: var(--sidebar-w);
+    padding: 0 14px; border-right: 1px solid var(--border);
+    height: 100%; display: flex; flex-direction: column; justify-content: center;
+  }
+  #logo h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; color: var(--accent); line-height: 1; }
+  #header-fill { flex: 1; }
+  #body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+  #sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w);
+    background: var(--sidebar-bg); border-right: 1px solid var(--border);
+    overflow-y: auto; flex-shrink: 0; padding-top: 6px;
+  }
+  #sidebar::-webkit-scrollbar { width: 3px; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); }
+  .sidebar-section { margin-bottom: 2px; }
+  #sidebar-home-btn {
+    display: flex; align-items: center; gap: 8px;
+    width: calc(100% - 20px); margin: 0 10px 8px;
+    background: var(--panel-bg); border: 1px solid var(--border); border-radius: 4px;
+    text-align: left; padding: 7px 10px;
+    font-family: var(--font); font-size: 12px; font-weight: 700; color: var(--text);
+    text-transform: uppercase; letter-spacing: 0.6px;
+    cursor: pointer; transition: background 0.15s, border-color 0.15s;
+  }
+  #sidebar-home-btn:hover { background: var(--card-bg); border-color: var(--border-hover); }
+  #sidebar-home-btn span.home-icon { font-size: 14px; }
+  .sidebar-header { padding: 7px 14px 4px; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .sidebar-header.fav-header { color: var(--yellow); }
+  .sidebar-header.offline-header { color: var(--red); }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 7px;
+    width: 100%; background: none; border: none;
+    text-align: left; padding: 5px 14px;
+    font-family: var(--font); font-size: 12px; color: var(--text);
+    cursor: pointer; transition: background 0.1s, color 0.1s;
+  }
+  .sidebar-item-icon {
+    width: 16px; height: 16px; border-radius: 3px; object-fit: cover;
+    flex-shrink: 0; background: var(--card-bg); border: 1px solid var(--border);
+  }
+  .sidebar-item-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .sidebar-item:hover { background: var(--panel-bg); }
+  .sidebar-item.active { background: var(--panel-bg); color: var(--accent); font-weight: 600; border-left: 2px solid var(--accent); padding-left: 12px; }
+  .sidebar-item.fav-item { color: var(--yellow); }
+  .sidebar-item.offline-item { color: var(--red); }
+  .sidebar-item.offline-item .sidebar-item-icon { opacity: 0.6; }
+  .sidebar-divider { height: 1px; background: var(--border); margin: 5px 0; }
+  #main { flex: 1; overflow-y: auto; background: var(--bg); }
+  #main::-webkit-scrollbar { width: 5px; }
+  #main::-webkit-scrollbar-thumb { background: var(--border); }
+  .page { display: none; padding: 18px 24px; }
+  .page.active { display: block; }
+  .section-label { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .card {
+    background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 4px; overflow: hidden; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .card:hover { border-color: var(--border-hover); }
+  .card .card-img { width: 100%; aspect-ratio: 4/3; background: var(--card-bg); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .card .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card .no-img { font-size: 9px; color: var(--text-muted); }
+  .card .card-label { padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card.offline-card .card-label { color: var(--red); }
+  .empty-note { font-size: 11px; color: var(--text-muted); margin-bottom: 20px; }
+  .creator-card {
+    background: var(--panel-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 16px 18px; margin-bottom: 22px;
+  }
+  .creator-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .creator-title .creator-name { color: var(--accent); }
+  .creator-desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; max-width: 640px; }
+  #game-search { width: 100%; background: var(--panel-bg); border: 1px solid var(--border); color: var(--text); padding: 6px; border-radius: 4px; font-family: var(--font); font-size: 11px; outline: none; }
+  #search-dropdown { display:none; position:absolute; top:100%; left:10px; right:10px; background: var(--sidebar-bg); border: 1px solid var(--border); border-top: none; z-index: 1000; max-height: 260px; overflow-y: auto; box-shadow: 0 6px 14px rgba(0,0,0,0.5); }
+  #game-page { display: none; flex-direction: column; height: 100%; }
+  #game-page.active { display: flex; }
+  .game-banner {
+    width: 100%; max-height: 42vh; min-height: 160px;
+    background: var(--panel-bg); display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--border); overflow: hidden; flex-shrink: 0;
+  }
+  .game-banner img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
+  .game-banner .no-banner { color: var(--text-muted); font-size: 12px; }
+  .game-meta { display: flex; align-items: center; background: var(--card-bg); border-bottom: 1px solid var(--border); flex-shrink: 0; min-height: 44px; }
+  .game-play-btn { background: var(--card-bg); border: none; border-right: 1px solid var(--border); color: var(--accent); font-family: var(--font); font-size: 12px; font-weight: 700; padding: 10px 20px; cursor: pointer; transition: background 0.15s; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
+  .game-play-btn:hover { background: var(--panel-bg); }
+  .game-fav-btn { background: none; border: none; border-right: 1px solid var(--border); padding: 10px 12px; cursor: pointer; font-size: 15px; flex-shrink: 0; transition: opacity 0.15s; color: var(--text-dim); }
+  .game-fav-btn:hover { opacity: 0.7; }
+  .game-meta-info { display: flex; align-items: center; gap: 9px; padding: 0 12px; overflow: hidden; min-width: 0; }
+  .game-icon-sm { width: 26px; height: 26px; border-radius: 4px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border); background: var(--card-bg); }
+  .game-name-bar { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .game-launch-destination { margin-left: auto; padding: 0 14px; color: var(--text-muted); font-size: 11px; white-space: nowrap; }
+  .game-body { padding: 16px 20px; overflow-y: auto; }
+  .game-desc-box { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; font-size: 12px; color: var(--text-dim); line-height: 1.6; max-width: 720px; }
+  .game-desc-box h1, .game-desc-box h2, .game-desc-box h3 { color: var(--text); line-height: 1.4; margin: 10px 0 6px; }
+  .game-desc-box h1:first-child, .game-desc-box h2:first-child, .game-desc-box h3:first-child { margin-top: 0; }
+  .game-desc-box h1 { font-size: 15px; }
+  .game-desc-box h2 { font-size: 14px; }
+  .game-desc-box h3 { font-size: 13px; }
+  .game-desc-box p { margin: 0 0 8px; }
+  .game-desc-box ul { margin: 4px 0 10px 18px; }
+  .game-desc-box li { margin-bottom: 3px; }
+  .game-desc-box strong { color: var(--text); }
+  .game-desc-box hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  .game-offline-notice { padding: 10px 14px; background: #200; border: 1px solid var(--red); border-radius: 4px; font-size: 12px; color: var(--red); max-width: 720px; }
+  .playtime-badge {
+    display:inline-flex; align-items:center; gap:6px; background: var(--card-bg);
+    border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px;
+    font-size: 11px; color: var(--text-dim); margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div id="logo"><h1>&#x43;&#x68;&#x65;&#x64;&#x64;&#x61;&#x72;&#x4f;&#x53; Games</h1></div>
+    <div id="header-fill"></div>
+  </div>
+  <div id="body">
+    <div id="sidebar">
+      <button id="sidebar-home-btn" onclick="showHome()"><span class="home-icon">⌂</span><span>Home</span></button>
+      <div style="padding:7px 10px;position:relative;">
+        <input type="text" id="game-search" placeholder="Search games..." autocomplete="off">
+        <div id="search-dropdown"></div>
+      </div>
+      <div class="sidebar-section" id="fav-section" style="display:none">
+        <div class="sidebar-header fav-header">- FAVORITES</div>
+        <div id="fav-sidebar"></div>
+      </div>
+      <div class="sidebar-divider" id="fav-divider" style="display:none"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-header">- ALL GAMES</div>
+        <div id="games-sidebar"></div>
+      </div>
+      <div class="sidebar-divider" id="offline-divider" style="display:none"></div>
+      <div class="sidebar-section" id="offline-section" style="display:none">
+        <div class="sidebar-header offline-header">- OFFLINE GAMES</div>
+        <div id="offline-sidebar"></div>
+      </div>
+    </div>
+    <div id="main">
+      <div class="page active" id="page-home">
+        <div class="creator-card">
+          <div class="creator-title">Created by <span class="creator-name">&#x43;&#x68;&#x65;&#x64;&#x64;&#x61;&#x72;&#x4f;&#x53;</span></div>
+          <div class="creator-desc">Browse the library and hit play — every game here runs instantly in your browser, no downloads or installs needed. Search for a title, star your favorites for quick access, and jump back in whenever you want.</div>
+        </div>
+        <div class="section-label" id="games-count">Loading games…</div>
+        <div class="grid" id="games-grid"></div>
+      </div>
+      <div id="game-page">
+        <div class="game-banner" id="game-banner"><div class="no-banner">No image</div></div>
+        <div class="game-meta">
+          <button class="game-play-btn" id="game-play-btn">PLAY</button>
+          <button class="game-fav-btn" id="game-fav-btn">☆</button>
+          <div class="game-meta-info">
+            <img class="game-icon-sm" id="game-icon-sm" src="" alt="" style="display:none" onerror="this.style.display='none'">
+            <div class="game-name-bar" id="game-name-bar"></div>
+          </div>
+          <div class="game-launch-destination" id="game-launch-destination" aria-live="polite"></div>
+        </div>
+        <div class="game-body" id="game-desc-area"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let sites = {};
+const getGameDir = () => `/core/games`;
+function gameSlug(game) {
+  return String(game?.src || "game");
+}
+const LOCAL_GAME_SLUGS = new Set([
+  "60-seconds", "adventure-capitalist", "backrooms", "baldis-basic", "basketball-legends",
+  "bloons-td4", "bloons-td5", "bowmasters", "brawl-stars", "buckshot-roulette",
+  "cheddar-clicker", "cheeserolling", "clash-of-vikings", "clustertruck", "cookie-clicker",
+  "crossy-roads", "drift-hunters", "escape-road", "flappy-bird", "flappy-dunk",
+  "flying-gorilla", "fnac", "fnae", "fnaf1", "fnaf2", "fnaf3", "fnaf4",
+  "geometry-dash", "getting-over-it", "granny", "gta-3", "gta-vc", "highway-racer-2",
+  "idle-breakout", "learn-to-fly3", "minecraft", "moto-x3m", "moto-x3m-poolparty",
+  "nitro-type", "nz-zombies", "orange-roulette", "peak", "people-playground",
+  "plants-vs-zombies", "postal", "raft", "raft-wars-2", "retro-bowl", "sm64",
+  "snow-rider3d", "they-are-coming", "throw-a-potato", "tiny-fishing", "ultrakill", "wrestle-bros",
+]);
+function localGameIcon(game) {
+  const slug = gameSlug(game);
+  return LOCAL_GAME_SLUGS.has(slug) && slug !== "fnac" ? `/core/games/${slug}/icon.png` : "";
+}
+function setGameImageFallback(image, game, onFailure = () => {}) {
+  delete image.dataset.imageFallback;
+  image.onerror = () => {
+    const localIcon = localGameIcon(game);
+    if (localIcon && image.dataset.imageFallback !== "local") {
+      image.dataset.imageFallback = "local";
+      image.src = localIcon;
+      return;
+    }
+    if (image.dataset.imageFallback !== "default") {
+      image.dataset.imageFallback = "default";
+      image.src = "/loader/favicon.png";
+      return;
+    }
+    image.onerror = null;
+    onFailure();
+  };
+}
+const FAVS_KEY = "library-favs";
+const PLAYTIME_KEY = "library-playtime";
+let playtimeTimer = null;
+const getFavs = () => { try { return JSON.parse(localStorage.getItem(FAVS_KEY) || "[]"); } catch { return []; } };
+const setFavs = a => localStorage.setItem(FAVS_KEY, JSON.stringify(a));
+function getPlaytimeData() { try { return JSON.parse(localStorage.getItem(PLAYTIME_KEY) || "{}"); } catch { return {}; } }
+function savePlaytimeData(data) { localStorage.setItem(PLAYTIME_KEY, JSON.stringify(data)); }
+function getPlaytimeMins(key) { return getPlaytimeData()[key] || 0; }
+function addPlaytime(key, minutes) {
+  if (minutes < 0.1) return;
+  const data = getPlaytimeData();
+  data[key] = parseFloat(((data[key] || 0) + minutes).toFixed(2));
+  savePlaytimeData(data);
+}
+function formatPlaytime(totalMins) {
+  if (totalMins < 1) return "0 min";
+  if (totalMins < 100) return `${Math.round(totalMins)} mins`;
+  return `${(totalMins / 60).toFixed(1)} hrs`;
+}
+function toggleFav(key) {
+  let f = getFavs();
+  f = f.includes(key) ? f.filter(k => k !== key) : [...f, key];
+  setFavs(f);
+  rebuildFavSidebar();
+  renderFavBtn(key);
+}
+function renderFavBtn(key) {
+  const btn = document.getElementById("game-fav-btn");
+  const on = getFavs().includes(key);
+  btn.textContent = on ? "★" : "☆";
+  btn.style.color = on ? "var(--yellow)" : "var(--text-dim)";
+}
+function niceKey(key) {
+  return sites[key]?.name || key;
+}
+function createHoverLabel(key, prettyName, className) {
+  const span = document.createElement("span");
+  if (className) span.className = className;
+  span.textContent = prettyName || niceKey(key);
+  return span;
+}
+function mdInline(s) {
+  s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/\*(.+?)\*/g, "<em>$1</em>");
+  return s;
+}
+function mdToHtml(md) {
+  const lines = md.split(/\r?\n/);
+  let html = "";
+  let inList = false;
+  const closeList = () => { if (inList) { html += "</ul>"; inList = false; } };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line === "") { closeList(); continue; }
+    if (/^-{3,}$/.test(line)) { closeList(); html += "<hr>"; continue; }
+    let m;
+    if ((m = line.match(/^###\s+(.*)/))) { closeList(); html += `<h3>${mdInline(m[1])}</h3>`; continue; }
+    if ((m = line.match(/^##\s+(.*)/))) { closeList(); html += `<h2>${mdInline(m[1])}</h2>`; continue; }
+    if ((m = line.match(/^#\s+(.*)/))) { closeList(); html += `<h1>${mdInline(m[1])}</h1>`; continue; }
+    if ((m = line.match(/^[\*\-]\s+(.*)/))) { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${mdInline(m[1])}</li>`; continue; }
+    closeList();
+    html += `<p>${mdInline(line)}</p>`;
+  }
+  closeList();
+  return html;
+}
+function buildSidebar() {
+  const gEl = document.getElementById("games-sidebar");
+  gEl.innerHTML = "";
+  Object.entries(sites).filter(([, s]) => s.enabled).sort((a, b) => a[1].name.localeCompare(b[1].name)).forEach(([key, s]) => {
+    const btn = document.createElement("button");
+    btn.className = "sidebar-item";
+    btn.dataset.key = key;
+    const icon = document.createElement("img");
+    icon.className = "sidebar-item-icon";
+    icon.src = s.image;
+    icon.loading = "lazy";
+    icon.alt = "";
+    setGameImageFallback(icon, s);
+    btn.appendChild(icon);
+    btn.appendChild(createHoverLabel(key, s.name, "sidebar-item-label"));
+    btn.onclick = () => showGame(key);
+    gEl.appendChild(btn);
+  });
+}
+function buildOfflineSidebar() {
+  const offline = Object.entries(sites).filter(([, s]) => !s.enabled).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  const section = document.getElementById("offline-section");
+  const divider = document.getElementById("offline-divider");
+  const container = document.getElementById("offline-sidebar");
+  container.innerHTML = "";
+  section.style.display = offline.length ? "" : "none";
+  divider.style.display = offline.length ? "" : "none";
+  offline.forEach(([key, game]) => {
+    const button = document.createElement("button");
+    button.className = "sidebar-item offline-item";
+    button.dataset.key = key;
+    const icon = document.createElement("img");
+    icon.className = "sidebar-item-icon";
+    icon.src = game.image;
+    icon.loading = "lazy";
+    icon.alt = "";
+    setGameImageFallback(icon, game);
+    button.append(icon, createHoverLabel(key, game.name, "sidebar-item-label"));
+    button.onclick = () => showGame(key);
+    container.appendChild(button);
+  });
+}
+function rebuildFavSidebar() {
+  const favs = getFavs();
+  const sec = document.getElementById("fav-section");
+  const div = document.getElementById("fav-divider");
+  const cont = document.getElementById("fav-sidebar");
+  cont.innerHTML = "";
+  if (!favs.length) { sec.style.display = "none"; div.style.display = "none"; return; }
+  sec.style.display = ""; div.style.display = "";
+  favs.slice().sort((a, b) => a.localeCompare(b)).forEach(key => {
+    const s = sites[key]; if (!s) return;
+    const btn = document.createElement("button");
+    btn.className = "sidebar-item fav-item";
+    btn.dataset.key = key;
+    const star = document.createElement("span");
+    star.style.flexShrink = "0";
+    star.textContent = "★";
+    btn.appendChild(star);
+    const icon = document.createElement("img");
+    icon.className = "sidebar-item-icon";
+    icon.src = s.image;
+    icon.loading = "lazy";
+    icon.alt = "";
+    setGameImageFallback(icon, s);
+    btn.appendChild(icon);
+    btn.appendChild(createHoverLabel(key, s.name, "sidebar-item-label"));
+    btn.onclick = () => showGame(key);
+    cont.appendChild(btn);
+  });
+}
+function buildCard(key, s) {
+  const c = document.createElement("div");
+  c.className = s.enabled ? "card" : "card offline-card";
+  const imgWrap = document.createElement("div");
+  imgWrap.className = "card-img";
+  const img = document.createElement("img");
+  img.src = s.image;
+  img.loading = "lazy";
+  const noImg = document.createElement("div");
+  noImg.className = "no-img";
+  noImg.style.cssText = "display:none;width:100%;height:100%;align-items:center;justify-content:center;";
+  noImg.textContent = "No img";
+  setGameImageFallback(img, s, () => { img.style.display = "none"; noImg.style.display = "flex"; });
+  imgWrap.appendChild(img);
+  imgWrap.appendChild(noImg);
+  const label = document.createElement("div");
+  label.className = "card-label";
+  label.appendChild(createHoverLabel(key, s.name));
+  c.appendChild(imgWrap);
+  c.appendChild(label);
+  c.onclick = () => showGame(key);
+  return c;
+}
+function buildNewGrid() {
+  const grid = document.getElementById("games-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  const entries = Object.entries(sites).sort((a, b) => Number(b[1].enabled) - Number(a[1].enabled) || a[1].name.localeCompare(b[1].name));
+  const offlineCount = entries.filter(([, s]) => !s.enabled).length;
+  document.getElementById("games-count").textContent = `${entries.length} games${offlineCount ? ` · ${offlineCount} offline` : ""}`;
+  entries.forEach(([key, s]) => {
+    grid.appendChild(buildCard(key, s));
+  });
+}
+const searchInput = document.getElementById("game-search"), searchDropdown = document.getElementById("search-dropdown");
+searchInput.addEventListener("input", () => renderDropdown(searchInput.value.toLowerCase().trim()));
+function renderDropdown(q) {
+  searchDropdown.innerHTML = "";
+  if (!q) { searchDropdown.style.display = "none"; return; }
+  const results = Object.entries(sites).filter(([key, s]) => key.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
+  if (!results.length) {
+    searchDropdown.style.display = "block";
+    const empty = document.createElement("div");
+    empty.style.cssText = "padding:8px 10px;color:var(--red);font-size:11px;text-align:center";
+    empty.textContent = `No results for "${q}"`;
+    searchDropdown.appendChild(empty);
+    return;
+  }
+  searchDropdown.style.display = "block";
+  results.forEach(([key, s]) => {
+    const it = document.createElement("div");
+    it.className = s.enabled ? "sidebar-item" : "sidebar-item offline-item";
+    it.style.paddingLeft = "18px";
+    it.style.fontSize = "11px";
+    it.appendChild(createHoverLabel(key, s.name));
+    it.onclick = () => { showGame(key); closeSearch(); };
+    searchDropdown.appendChild(it);
+  });
+}
+function closeSearch() { searchInput.value = ""; searchDropdown.style.display = "none"; }
+document.addEventListener("click", e => { if (!e.target.closest("#sidebar")) closeSearch(); });
+function showHome() {
+  document.getElementById("page-home").classList.add("active");
+  document.getElementById("game-page").classList.remove("active");
+  document.querySelectorAll(".sidebar-item").forEach(b => b.classList.remove("active"));
+}
+function renderPlaytime(key) {
+  const old = document.getElementById("playtime-badge");
+  if (old) old.remove();
+  const mins = getPlaytimeMins(key);
+  const badge = document.createElement("div");
+  badge.id = "playtime-badge";
+  badge.className = "playtime-badge";
+  badge.innerHTML = `<span style="color:var(--accent);">⏱</span><span><strong style="color:var(--text);">${formatPlaytime(mins)}</strong><span style="color:var(--text-muted);"> on record</span></span>`;
+  const area = document.getElementById("game-desc-area");
+  if (area) area.prepend(badge);
+}
+function gameLaunchMode() {
+  try {
+    const mode = localStorage.getItem("cheddar-game-launch-mode");
+    return ["cheddar", "browser-tab", "popout"].includes(mode) ? mode : "cheddar";
+  } catch { return "cheddar"; }
+}
+function renderLaunchDestination() {
+  const labels = { cheddar: "Opens in Cheddar", "browser-tab": "Opens in browser tab", popout: "Opens in popout" };
+  const label = document.getElementById("game-launch-destination");
+  if (label) label.textContent = labels[gameLaunchMode()];
+}
+async function showGame(key) {
+  const s = sites[key];
+  if (!s) return;
+  const descriptionRequest = ++showGame.descriptionRequest;
+  document.getElementById("page-home").classList.remove("active");
+  document.getElementById("game-page").classList.add("active");
+  document.querySelectorAll(".sidebar-item").forEach(b => b.classList.toggle("active", b.dataset.key === key));
+  const bannerEl = document.getElementById("game-banner");
+  bannerEl.replaceChildren();
+  const banner = document.createElement("img");
+  banner.src = s.banner;
+  banner.alt = `${s.name} artwork`;
+  const noBanner = document.createElement("div");
+  noBanner.className = "no-banner";
+  noBanner.style.display = "none";
+  noBanner.textContent = "No image";
+  setGameImageFallback(banner, s, () => { banner.style.display = "none"; noBanner.style.display = "flex"; });
+  bannerEl.append(banner, noBanner);
+  const ico = document.getElementById("game-icon-sm");
+  ico.src = s.image; ico.style.display = ""; setGameImageFallback(ico, s);
+  const nameBar = document.getElementById("game-name-bar");
+  nameBar.textContent = s.name;
+  renderFavBtn(key);
+  document.getElementById("game-fav-btn").onclick = () => toggleFav(key);
+  const descArea = document.getElementById("game-desc-area");
+  const playBtn = document.getElementById("game-play-btn");
+  document.getElementById("playtime-badge")?.remove();
+  renderLaunchDestination();
+  if (!s.enabled) {
+    descArea.innerHTML = `<div class="game-offline-notice">'${s.name}' is not currently available.</div>`;
+    playBtn.disabled = true;
+    playBtn.style.opacity = "0.4";
+    playBtn.onclick = null;
+  } else {
+    descArea.innerHTML = `<div class="game-desc-box"><p>Loading description…</p></div>`;
+    fetch(`/core/games/${gameSlug(s)}/desc.md`, { cache: "default" })
+      .then(response => response.ok ? response.text() : "")
+      .then(description => {
+        if (descriptionRequest !== showGame.descriptionRequest) return;
+        const content = description.trim() || `# ${s.name}\n\nPlay ${s.name} right in CheddarOS. Use the controls shown in game, explore each level, and track your playtime on this device.`;
+        descArea.innerHTML = `<div class="game-desc-box">${mdToHtml(content)}</div>`;
+        renderPlaytime(key);
+      })
+      .catch(() => {
+        if (descriptionRequest !== showGame.descriptionRequest) return;
+        descArea.innerHTML = `<div class="game-desc-box"><h2>${s.name}</h2><p>Play ${s.name} right in CheddarOS. Use the controls shown in game and explore each level.</p></div>`;
+        renderPlaytime(key);
+      });
+    renderPlaytime(key);
+    playBtn.disabled = false;
+    playBtn.style.opacity = "1";
+    playBtn.onclick = () => launchGame(key);
+  }
+}
+showGame.descriptionRequest = 0;
+function launchGame(key) {
+  const s = sites[key];
+  if (!s || !s.enabled) return;
+  const startPlaytime = () => {
+    if (playtimeTimer) clearInterval(playtimeTimer);
+    let lastSavedAt = Date.now();
+    playtimeTimer = setInterval(() => {
+      if (document.visibilityState !== "visible") { lastSavedAt = Date.now(); return; }
+      const now = Date.now();
+      const minutes = (now - lastSavedAt) / 60000;
+      lastSavedAt = now;
+      addPlaytime(key, minutes);
+      renderPlaytime(key);
+    }, 30000);
+  };
+  if (typeof window.parent.cheddarOpenGame === "function") {
+    const opened = window.parent.cheddarOpenGame(s);
+    if (!opened) document.getElementById("game-desc-area").textContent = "Your browser blocked the new game tab. Allow pop-ups for \u0043\u0068\u0065\u0064\u0064\u0061\u0072\u004f\u0053, then press PLAY again.";
+    else startPlaytime();
+    return;
+  }
+  document.getElementById("game-desc-area").textContent =
+    "Open this page in the \u0043\u0068\u0065\u0064\u0064\u0061\u0072\u004f\u0053 browser to launch games in an in-app tab.";
+}
+(function init() {
+  fetch("/core/json/games.json", { cache: "default" })
+    .then(response => { if (!response.ok) throw new Error(`Games list failed to load (${response.status})`); return response.json(); })
+    .then(games => {
+      sites = Object.fromEntries(games.filter(game => game && typeof game.url === "string").map(game => {
+        const slug = gameSlug(game);
+        const hasLocalCopy = LOCAL_GAME_SLUGS.has(slug);
+        const localUrl = `/core/games/${slug}/index.html`;
+        const url = hasLocalCopy ? localUrl : game.url;
+        const image = `/core/games/${slug}/icon.png`;
+        return [game.url, { ...game, name: game.pretty, url, image, banner: `/core/games/${slug}/banner.png` }];
+      }));
+      buildSidebar();
+      buildOfflineSidebar();
+      rebuildFavSidebar();
+      buildNewGrid();
+      const requested = decodeURIComponent(location.hash.slice(1));
+      if (requested) {
+        const key = Object.keys(sites).find(gameUrl => gameSlug(sites[gameUrl]) === requested);
+        if (key) void showGame(key);
+      }
+    })
+    .catch(error => {
+      console.error("Could not load games:", error);
+      document.getElementById("games-grid").textContent = "Games could not be loaded. Please refresh and try again.";
+    });
+})();
+</script>
+</body>
+</html>

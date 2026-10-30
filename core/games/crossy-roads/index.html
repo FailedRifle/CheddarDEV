@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <base href="https://cdn.jsdelivr.net/gh/failedrifle/cheddaros-library@main/crossy-road/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>crossy road</title>
+
+  <script src="https://cdn.jsdelivr.net/gh/bubbls/youtube-playables@main/ytgame.js" nonce="2KHli9LrFFijH2jCb5SkMw"></script>
+
+  <link rel="stylesheet" href="style.css" nonce="2KHli9LrFFijH2jCb5SkMw">
+
+  <script src="scripts/three.min.js" nonce="2KHli9LrFFijH2jCb5SkMw"></script>
+
+  <script src="scripts/game.min.js" nonce="2KHli9LrFFijH2jCb5SkMw"></script>
+
+  <script src="scripts/extra.min.js" nonce="2KHli9LrFFijH2jCb5SkMw"></script>
+  <script src="scripts/bootstrap.min.js" nonce="2KHli9LrFFijH2jCb5SkMw"></script>
+<style>
+#sidebarad1,
+#sidebarad2 {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 160px;
+  height: 600px;
+  padding: 0;
+  margin: 0;
+  z-index: 999999;
+}
+#sidebarad1 {
+  left: 0;
+}
+#sidebarad2 {
+  right: 0;
+}
+.sidebar-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  z-index: 10;
+}
+.sidebar-frame {
+  width: 160px;
+  height: 600px;
+  border: none;
+  display: block;
+}
+</style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+      background-color: #121212;
+      color: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid #333;
+      margin-bottom: 24px;
+      padding-bottom: 10px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin: 0;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    #header-status {
+      font-family: monospace;
+      font-size: 12px;
+      color: #4caf50;
+      text-transform: uppercase;
+      display: none;
+    }
+
+    #video-viewport {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background-color: #000;
+      border: 1px solid #444;
+      border-radius: 4px;
+      margin-top: 20px;
+      margin-bottom: 40px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .row { margin-top: 20px; }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    select {
+      flex: 1;
+      font-family: monospace;
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background-color: #1e1e1e;
+      color: #ffffff;
+      outline: none;
+    }
+
+    button {
+      padding: 8px 16px;
+      cursor: pointer;
+      background-color: #333;
+      border: 1px solid #444;
+      border-radius: 4px;
+      font-weight: 500;
+      color: #fff;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background-color: #444;
+      border-color: #555;
+    }
+
+    #start-btn {
+      background-color: #ffffff;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    #start-btn:hover { background-color: #cccccc; }
+
+    #instructions {
+      margin-top: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      background: #1a1910;
+      border: 1px solid #4d4500;
+      color: #ffd700;
+      border-radius: 4px;
+      padding: 12px;
+    }
+
+    .hidden { display: none; }
+
+    .live-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background-color: #4caf50;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    
+    label { font-size: 14px; color: #bbb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>cheddar hdmi port</h1>
+      <div id="header-status">
+        <span class="live-dot"></span> connected: <span id="device-label">none</span>
+      </div>
+    </header>
+
+    <div id="setup-section">
+      <div id="instructions">
+        this tool allows you to stream anything to your chromebook hopefully without issue<br>
+        you need to own a <strong>HDMI Video Capture USB</strong> to have this running as intended
+        <br><br>
+        please also make sure you enable <strong>both</strong> microphone and camera access<br>
+      </div>
+      <div class="row">
+        <button id="start-btn" onclick="initCapture()">connect</button>
+      </div>
+    </div>
+
+    <div id="active-section" class="hidden">
+      <div class="row">
+        <label>Input:</label>
+        <div class="input-group">
+          <select id="deviceSelect" onchange="switchDevice()"></select>
+          <button onclick="goFullscreen()">fullscreen</button>
+          <button onclick="stopCapture()" style="color: #ff5252; border-color: #522;">disconnect</button>
+        </div>
+      </div>
+
+      <div id="video-viewport">
+        <video id="video" autoplay playsinline></video>
+      </div>
+    </div>
+
+    <p id="err" style="color: #ff5252; margin-top: 10px; font-size: 13px; font-family: monospace;"></p>
+  </div>
+
+  <script>
+    let stream = null;
+    const select = document.querySelector("#deviceSelect");
+    const errBox = document.querySelector("#err");
+    const headerStatus = document.querySelector("#header-status");
+
+    async function initCapture() {
+      errBox.textContent = "";
+      try {
+        const temp = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        temp.getTracks().forEach(t => t.stop());
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const vids = devices.filter(d => d.kind === 'videoinput');
+
+        if (vids.length === 0) throw new Error("No capture devices found.");
+
+        select.innerHTML = vids.map((d, i) => 
+          `<option value="${d.deviceId}">${d.label || 'Input ' + (i+1)}</option>`
+        ).join('');
+
+        document.querySelector("#setup-section").classList.add("hidden");
+        document.querySelector("#active-section").classList.remove("hidden");
+        headerStatus.style.display = "block";
+
+        await startStream(vids[0].deviceId, vids[0].label || 'Input 1');
+      } catch (e) {
+        errBox.textContent = "ERROR: " + e.message;
+      }
+    }
+
+    async function startStream(id, label) {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: id }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: true
+        });
+        
+        const video = document.querySelector("#video");
+        video.srcObject = stream;
+        document.querySelector("#device-label").textContent = label;
+      } catch (e) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: id }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+        });
+        const video = document.querySelector("#video");
+        video.srcObject = stream;
+        document.querySelector("#device-label").textContent = label + " (No Audio)";
+        console.warn("Audio capture failed, starting video only.", e);
+      }
+    }
+
+    function switchDevice() {
+      const label = select.options[select.selectedIndex].text;
+      startStream(select.value, label);
+    }
+
+    function stopCapture() {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      document.querySelector("#setup-section").classList.remove("hidden");
+      document.querySelector("#active-section").classList.add("hidden");
+      headerStatus.style.display = "none";
+    }
+
+    function goFullscreen() {
+      const vp = document.querySelector("#video-viewport");
+      if (vp.requestFullscreen) vp.requestFullscreen();
+      else if (vp.webkitRequestFullscreen) vp.webkitRequestFullscreen();
+    }
+  </script>
+</body>
+</html>

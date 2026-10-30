@@ -1,0 +1,23 @@
+{
+  "name": "\u0043\u0068\u0065\u0064\u0064\u0061\u0072\u004f\u0053",
+  "short_name": "\u0043\u0068\u0065\u0064\u0064\u0061\u0072\u004f\u0053",
+  "start_url": "../injector.html",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#131313",
+  "theme_color": "#131313",
+  "icons": [
+    {
+      "src": "./chedda-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./chedda-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

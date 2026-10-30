@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <title>sm64</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: white;
+            background: #000;
+            image-rendering: pixelated;
+            overflow: hidden;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <canvas class="emscripten" id="canvas"></canvas>
+    </div>
+
+    <script>
+        var Module = {
+            preRun: [],
+            postRun: [],
+            print: function(t) {
+                console.log(t)
+            },
+            printErr: function(t) {
+                console.error(t)
+            },
+            canvas: (function() {
+                var e = document.getElementById("canvas");
+                e.width = window.innerWidth;
+                e.height = window.innerHeight;
+                return e;
+            })(),
+            setStatus: function(t) {}
+        };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/gh/ArkShocer/sm64@main/sm64.us.f3dex2e.js"></script>
+
+</body>
+</html>

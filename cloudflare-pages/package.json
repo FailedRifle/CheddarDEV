@@ -1,0 +1,14 @@
+{
+  "name": "cheeseburger-pages",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../scripts/build-pages.js"
+  },
+  "dependencies": {
+    "@mercuryworkshop/bare-as-module3": "^2.2.5",
+    "@mercuryworkshop/bare-mux": "2.1.7",
+    "@mercuryworkshop/epoxy-transport": "^2.1.28",
+    "@mercuryworkshop/libcurl-transport": "^1.5.2"
+  }
+}
