@@ -47,7 +47,17 @@ await writeFile(path.join(output, "_headers"), [
   "  X-Robots-Tag: noindex, nofollow, noarchive",
   "",
   // Remove the inherited COEP after the wildcard rule; Cloudflare processes
-  // matching rules in order. Vaulted proxied frames don't all send COEP.
+  // matching rules in order. The PWA launcher embeds the browser, and Vaulted
+  // proxied frames don't all send COEP.
+  "/injector.html",
+  "  ! Cross-Origin-Embedder-Policy",
+  "",
+  "/index.html",
+  "  ! Cross-Origin-Embedder-Policy",
+  "",
+  "/",
+  "  ! Cross-Origin-Embedder-Policy",
+  "",
   "/core/browser",
   "  ! Cross-Origin-Embedder-Policy",
   "",
