@@ -14,7 +14,6 @@ const require = createRequire(import.meta.url);
 const packageDist = (name) => path.dirname(require.resolve(name));
 const epoxyPath = packageDist("@mercuryworkshop/epoxy-transport");
 const libcurlPath = packageDist("@mercuryworkshop/libcurl-transport");
-const baremuxPath = packageDist("@mercuryworkshop/bare-mux");
 const fastify = Fastify({
   trustProxy: true,
   serverFactory: (handler) => createServer()
@@ -34,7 +33,6 @@ const fastify = Fastify({
 
 fastify.register(fastifyStatic, { root: epoxyPath, prefix: "/epoxy/", decorateReply: false });
 fastify.register(fastifyStatic, { root: libcurlPath, prefix: "/libcurl/", decorateReply: false });
-fastify.register(fastifyStatic, { root: baremuxPath, prefix: "/baremux/", decorateReply: false });
 fastify.register(fastifyStatic, { root, prefix: "/", decorateReply: true });
 fastify.register(fastifyStatic, { root: path.join(root, "proxy-assets"), prefix: "/proxy-assets/", decorateReply: false });
 fastify.get("/health", async () => ({ status: "ok" }));
@@ -63,7 +61,7 @@ fastify.post("/api/gpt-log", async (request, reply) => {
   await gptLogHandler(request, response);
 });
 fastify.addHook("onSend", async (request, reply, payload) => {
-  if (request.url.startsWith("/proxy-assets/unified-worker.js")) {
+  if (request.url.startsWith("/vaulted-assets/vaulted-worker.js")) {
     reply.header("Service-Worker-Allowed", "/");
   }
   return payload;
