@@ -6,7 +6,7 @@ import {
   setWisp,
   getTransportChoice,
   getOriginalUrl,
-} from "/proxy-assets/vaulted-runtime.mjs?v=vaulted-20261030-2";
+} from "/proxy-assets/vaulted-runtime.mjs?v=vaulted-20261031-1";
 
 // Use the same direct Wisp endpoint as the working Cheddar deployment.
 // Cloudflare Pages' same-origin /wisp/ relay closes WebSocket handshakes.

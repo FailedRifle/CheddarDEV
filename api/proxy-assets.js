@@ -4,11 +4,11 @@ import path from "node:path";
 const root = process.cwd();
 const modules = path.join(root, "node_modules/@mercuryworkshop");
 const assets = {
-  "vaulted-runtime": path.join(root, "cfvi4/szst2w.js"),
-  "vaulted-controller": path.join(root, "6m9rd/ybnwpk.js"),
-  "vaulted-inject": path.join(root, "6m9rd/cs0u3t.js"),
-  "vaulted-worker": path.join(root, "9byt8m.js"),
-  "vaulted-wasm": path.join(root, "cfvi4/ses5q6.wasm"),
+  "vaulted-runtime": path.join(root, "vaulted-assets/vaulted-runtime.js"),
+  "vaulted-controller": path.join(root, "vaulted-assets/vaulted-controller.js"),
+  "vaulted-inject": path.join(root, "vaulted-assets/vaulted-inject.js"),
+  "vaulted-worker": path.join(root, "vaulted-assets/vaulted-worker.js"),
+  "vaulted-wasm": path.join(root, "vaulted-assets/vaulted-runtime.wasm"),
   epoxy: path.join(modules, "epoxy-transport/dist/index.mjs"),
   openssl: path.join(modules, "libcurl-transport/dist/index.mjs"),
 };

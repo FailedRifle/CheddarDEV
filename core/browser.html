@@ -571,7 +571,7 @@
     }
     .proxy-loading { position: absolute; inset: 0; z-index: 2; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: var(--bg); color: var(--text); font: 13px var(--mono); }
     .proxy-loading.visible { display: flex; }
-    .proxy-loading-cheese { display: inline-block; font: 42px/1 sans-serif; animation: cheese-spin 1.15s linear infinite; }
+    .proxy-loading-cheese { display: inline-block; width: 42px; height: 42px; object-fit: contain; animation: cheese-spin 1.15s linear infinite; }
     @keyframes cheese-spin { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .proxy-loading-cheese { animation: none; } }
     .view {
@@ -1205,7 +1205,7 @@
     </div>
   </section>
   <template id="browser-pane-template">
-    <div class="proxy-loading" data-proxy-loading role="status" aria-live="polite"><span class="proxy-loading-cheese" aria-hidden="true">🧀</span><span data-proxy-loading-label>Fetching page…</span></div>
+    <div class="proxy-loading" data-proxy-loading role="status" aria-live="polite"><img class="proxy-loading-cheese" src="/loader/favicon.png" alt=""><span data-proxy-loading-label>Fetching page…</span></div>
     <div class="view active" id="view-home">
       <div class="homepage">
         <div class="logo-group">
@@ -2470,7 +2470,7 @@ let ANNOUNCEMENT_TEXT = "";
         icon.alt = "";
         icon.onerror = () => { icon.src = cheddarFavicon; };
         const label = document.createElement("span");
-        label.textContent = preset.title;
+        label.textContent = value === "default" ? "Default" : preset.title;
         button.append(icon, label);
         button.addEventListener("click", () => {
           const chosen = applyAppCloak(button.dataset.cloakChoice);
