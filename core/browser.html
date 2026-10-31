@@ -2051,7 +2051,7 @@ let ANNOUNCEMENT_TEXT = "";
     let proxyRouterPromise;
     function loadProxyRouter() {
       if (!proxyRouterPromise) {
-        proxyRouterPromise = import("/proxy-assets/vaulted-router.js?v=vaulted-20261030-2").catch(error => {
+        proxyRouterPromise = import("/proxy-assets/vaulted-router.js?v=vaulted-20261031-1").catch(error => {
           proxyRouterPromise = null;
           throw error;
         });
