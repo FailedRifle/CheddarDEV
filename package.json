@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@fastify/static": "^10.1.4",
+    "@mercuryworkshop/bare-mux": "2.1.7",
     "@mercuryworkshop/epoxy-transport": "^3.0.2",
     "@mercuryworkshop/libcurl-transport": "^2.0.6",
     "@mercuryworkshop/wisp-js": "^0.4.1",

@@ -1376,10 +1376,14 @@
                 <option value="openssl">OpenSSL</option>
               </select>
             </label>
-            <div class="setting-card">
-              <span class="setting-copy"><span class="setting-title">Backend</span><span class="setting-description">Cheddar uses Vaulted’s proxy controller for all sites.</span></span>
-              <output class="setting-value" data-current-backend aria-label="Current proxy backend">Vaulted Proxy</output>
-            </div>
+            <label class="setting-card">
+              <span class="setting-copy"><span class="setting-title">Proxy backend</span><span class="setting-description">Vaulted routes TikTok through Ultraviolet and other sites through Scramjet. Choose either engine directly to use it for every site.</span></span>
+              <select data-setting="backend" aria-label="Proxy backend">
+                <option value="vaulted">Vaulted (automatic)</option>
+                <option value="scramjet">Scramjet</option>
+                <option value="ultraviolet">Ultraviolet</option>
+              </select>
+            </label>
             <label class="setting-card">
               <span class="setting-copy"><span class="setting-title">Search Engine</span><span class="setting-description">Choose where text searches are sent.</span></span>
               <select data-setting="search-engine" aria-label="Search Engine">
@@ -2026,6 +2030,10 @@ let ANNOUNCEMENT_TEXT = "";
         const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
         if (/^https?:\/\//i.test(decoded || "")) return decoded;
       }
+      if (current.pathname.startsWith("/proxy-assets/uv/service/")) {
+        const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
+        if (/^https?:\/\//i.test(decoded || "")) return decoded;
+      }
       if (current.pathname.startsWith("/proxy-assets/")) return "";
       return current.href;
     }
@@ -2044,6 +2052,10 @@ let ANNOUNCEMENT_TEXT = "";
           const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
           return /^https?:\/\//i.test(decoded || "") ? decoded : "";
         }
+        if (current.pathname.startsWith("/proxy-assets/uv/service/")) {
+          const decoded = window.cheddarProxyOriginalUrl?.(current.href, frame);
+          return /^https?:\/\//i.test(decoded || "") ? decoded : "";
+        }
         if (current.pathname.startsWith("/proxy-assets/")) return "";
         return /^https?:$/i.test(current.protocol) ? current.href : "";
       } catch { return ""; }
@@ -2051,7 +2063,7 @@ let ANNOUNCEMENT_TEXT = "";
     let proxyRouterPromise;
     function loadProxyRouter() {
       if (!proxyRouterPromise) {
-        proxyRouterPromise = import("/proxy-assets/vaulted-router.js?v=vaulted-20261031-1").catch(error => {
+        proxyRouterPromise = import("/proxy-assets/vaulted-router.js?v=vaulted-20261031-2").catch(error => {
           proxyRouterPromise = null;
           throw error;
         });
@@ -2427,6 +2439,7 @@ let ANNOUNCEMENT_TEXT = "";
         if (themeStatus) themeStatus.textContent = themeName(selected) + " theme applied.";
       }));
       const transport = pane.querySelector('[data-setting="transport"]');
+      const backend = pane.querySelector('[data-setting="backend"]');
       const searchEngine = pane.querySelector('[data-setting="search-engine"]');
       const cloakOptions = pane.querySelector("[data-cloak-options]");
       const cloakPreviewIcon = pane.querySelector("[data-cloak-preview-icon]");
@@ -2449,6 +2462,8 @@ let ANNOUNCEMENT_TEXT = "";
         localStorage.setItem("transportType", "epoxy");
       }
       transport.value = ["epoxy", "openssl"].includes(savedTransport) ? savedTransport : "epoxy";
+      const savedBackend = localStorage.getItem("proxy-backend");
+      backend.value = savedBackend === "uv" ? "ultraviolet" : (["scramjet", "ultraviolet"].includes(savedBackend) ? savedBackend : "vaulted");
       searchEngine.value = selectedSearchEngine();
       const updateCloakPreview = (value) => {
         const preset = appCloaks[value] || appCloaks.default;
@@ -2503,6 +2518,22 @@ let ANNOUNCEMENT_TEXT = "";
           status.textContent = `Could not apply transport: ${error?.message || error}`;
         } finally {
           transport.disabled = false;
+        }
+      });
+      backend.addEventListener("change", async () => {
+        const previous = backend.value;
+        const requested = backend.value;
+        status.textContent = "Switching proxy backend…";
+        backend.disabled = true;
+        try {
+          const router = await loadProxyRouter();
+          await router.configureBackend(requested);
+          status.textContent = `Proxy backend set to ${backend.options[backend.selectedIndex].text}. Open the site again to apply it.`;
+        } catch (error) {
+          backend.value = previous;
+          status.textContent = `Could not switch proxy backend: ${error?.message || error}`;
+        } finally {
+          backend.disabled = false;
         }
       });
       searchEngine.addEventListener("change", () => {

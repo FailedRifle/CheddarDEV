@@ -1,4 +1,4 @@
-const stockSW = "/vaulted-assets/vaulted-worker.js";
+const stockSW = "/proxy-assets/unified-worker.js";
 const runtimeScripts = [
   "/vaulted-assets/vaulted-runtime.js",
   "/vaulted-assets/vaulted-controller.js",
@@ -241,6 +241,8 @@ export async function proxySJ(input, { frame: element } = {}) {
 }
 
 export function getOriginalUrl(value, element) {
+  const ultravioletUrl = window.cheddarUltravioletOriginalUrl?.(value);
+  if (ultravioletUrl) return ultravioletUrl;
   const frame = element && managedFrames.get(element);
   if (!frame || !window._np0jxat?.unrewriteUrl) return value || "";
   try {

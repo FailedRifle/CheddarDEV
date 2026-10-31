@@ -6,28 +6,57 @@ import {
   setWisp,
   getTransportChoice,
   getOriginalUrl,
-} from "/proxy-assets/vaulted-runtime.mjs?v=vaulted-20261031-1";
+} from "/proxy-assets/vaulted-runtime.mjs?v=vaulted-20261031-2";
 
-// Use the same direct Wisp endpoint as the working Cheddar deployment.
-// Cloudflare Pages' same-origin /wisp/ relay closes WebSocket handshakes.
 const wisp = "wss://lunaar.org/wisp/";
+const ultravioletRuntimeUrl = "/proxy-assets/ultraviolet-runtime.mjs?v=ultraviolet-20261031-1";
 let proxySetupPromise;
 let proxyReconnectPromise;
+let ultravioletRuntimePromise;
 
-async function bootVaultedProxy() {
-  await setWisp(wisp);
-  await setTransport(getTransportChoice());
-  return ensureProxyReady();
+function selectedBackend() {
+  const saved = localStorage.getItem("proxy-backend");
+  if (saved === "uv") return "ultraviolet";
+  return ["vaulted", "scramjet", "ultraviolet"].includes(saved) ? saved : "vaulted";
 }
 
-function prepareProxy() {
+function backendForUrl(input) {
+  const selected = selectedBackend();
+  if (selected !== "vaulted") return selected;
+  const host = new URL(makeURL(input)).hostname.toLowerCase();
+  return host === "tiktok.com" || host.endsWith(".tiktok.com") ? "ultraviolet" : "scramjet";
+}
+
+async function loadUltravioletRuntime() {
+  if (!ultravioletRuntimePromise) {
+    ultravioletRuntimePromise = import(ultravioletRuntimeUrl).catch(error => {
+      ultravioletRuntimePromise = null;
+      throw error;
+    });
+  }
+  return ultravioletRuntimePromise;
+}
+
+async function prepareVaulted() {
   if (!proxySetupPromise) {
-    proxySetupPromise = bootVaultedProxy().catch(error => {
+    proxySetupPromise = (async () => {
+      await setWisp(wisp);
+      await setTransport(getTransportChoice());
+      await ensureProxyReady();
+    })().catch(error => {
       proxySetupPromise = null;
       throw error;
     });
   }
   return proxySetupPromise;
+}
+
+async function prepareUltraviolet() {
+  const { registerSW } = await import("/proxy-assets/vaulted-runtime.mjs?v=vaulted-20261031-2");
+  await registerSW();
+  const ultraviolet = await loadUltravioletRuntime();
+  await ultraviolet.setUltravioletTransport(getTransportChoice());
+  return ultraviolet;
 }
 
 function reconnectProxy() {
@@ -37,6 +66,10 @@ function reconnectProxy() {
       await setWisp(wisp);
       await setTransport(getTransportChoice(), { persist: false, reconnect: true });
       await ensureProxyReady();
+      if (ultravioletRuntimePromise) {
+        const ultraviolet = await loadUltravioletRuntime();
+        await ultraviolet.setUltravioletTransport(getTransportChoice(), { reconnect: true });
+      }
     })().finally(() => {
       proxyReconnectPromise = null;
     });
@@ -49,20 +82,53 @@ window.addEventListener("online", () => {
 });
 
 export async function configureTransport(transport) {
-  await prepareProxy();
-  await setTransport(transport);
+  if (selectedBackend() !== "ultraviolet") {
+    await prepareVaulted();
+    await setTransport(transport);
+  }
+  if (selectedBackend() !== "scramjet") {
+    const ultraviolet = await loadUltravioletRuntime();
+    await ultraviolet.setUltravioletTransport(transport);
+  }
+}
+
+export async function configureBackend(backend) {
+  if (!["vaulted", "scramjet", "ultraviolet"].includes(backend)) {
+    throw new TypeError(`Unsupported proxy backend: ${backend}`);
+  }
+  localStorage.setItem("proxy-backend", backend);
+  if (backend === "ultraviolet") await prepareUltraviolet();
+  else await prepareVaulted();
+  return backend;
 }
 
 window.cheddarProxyOpen = async (input, options = {}) => {
-  await prepareProxy();
-  return proxySJ(makeURL(input), { frame: options.frame });
+  const url = makeURL(input);
+  if (backendForUrl(url) === "ultraviolet") {
+    const ultraviolet = await prepareUltraviolet();
+    return ultraviolet.proxyUV(url);
+  }
+  await prepareVaulted();
+  return proxySJ(url, { frame: options.frame });
 };
 
 window.cheddarProxyFallback = async (input, options = {}) => {
-  await prepareProxy();
+  const url = makeURL(input);
+  if (backendForUrl(url) === "ultraviolet") {
+    const ultraviolet = await prepareUltraviolet();
+    return ultraviolet.proxyUV(url);
+  }
+  await prepareVaulted();
   await ensureProxyReady();
-  return proxySJ(makeURL(input), { frame: options.frame });
+  return proxySJ(url, { frame: options.frame });
 };
 
 window.cheddarProxyOriginalUrl = getOriginalUrl;
 
+window.addEventListener("load", () => {
+  if (selectedBackend() === "ultraviolet") {
+    prepareUltraviolet().catch(error => console.warn("Ultraviolet startup deferred", error));
+  } else {
+    prepareVaulted().catch(error => console.warn("Vaulted proxy startup deferred", error));
+  }
+});
